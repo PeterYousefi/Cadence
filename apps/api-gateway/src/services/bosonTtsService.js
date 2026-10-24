@@ -5,10 +5,15 @@ import { config } from '../config.js';
  * @param {string} [scriptText]
  * @param {string} [scenario='chaos-outage']
  */
-export async function generateHiggsTtsBriefing(scriptText, scenario = 'chaos-outage') {
-  const defaultScript = scenario === 'chaos-outage'
-    ? `<|emotion:urgent|> ALERT! Primary Redis cluster redis_cache has experienced sudden network isolation in us-east-1! <|sfx:sigh|> Blast radius has impacted 4 downstream order-fulfillment workers. <|prosody:speed_fast|> Initiating automated circuit breaker on Envoy gateway. Failover to PostgreSQL read-replica active. <|emotion:elation|> Blast containment verified! System topology stabilized.`
-    : `<|prosody:speed_fast|> Executive Briefing for Cadence Architecture. <|sfx:cough|> Ahem. Our real-time event pipeline handles 120,000 events per second with sub-18ms P99 latency. <|emotion:elation|> By leveraging Boson AI 24kHz full-duplex speech, we have reduced audio infrastructure costs by 90% compared to legacy realtime APIs!`;
+export async function generateHiggsTtsBriefing(scriptText, scenario = 'auth-outage') {
+  let defaultScript = '';
+  if (scenario === 'auth-outage') {
+    defaultScript = `<|emotion:urgent|> INCIDENT ALERT: Auth service outage detected! 503 Service Unavailable spike originating from cross-AZ VPC network partition in us-east-1b. <|sfx:sigh|> Envoy circuit breaker CB_AUTH has tripped to OPEN, rejecting incoming token verifications. <|prosody:speed_fast|> Initiating immediate remediation: activating local JWKS stateless JWT fallback cache, reconciling route tables on AWS Transit Gateway, and cycling partitioned auth worker pods. <|emotion:neutral|> Network partition resolved. Transitioning circuit breaker to HALF-OPEN with a 10% canary probe rate. Success rate confirmed at 100%. <|emotion:elation|> Gradually closing circuit breaker to full throughput. Auth service restored and telemetry stabilized!`;
+  } else if (scenario === 'chaos-outage') {
+    defaultScript = `<|emotion:urgent|> ALERT! Primary Redis cluster redis_cache has experienced sudden network isolation in us-east-1! <|sfx:sigh|> Blast radius has impacted 4 downstream order-fulfillment workers. <|prosody:speed_fast|> Initiating automated circuit breaker on Envoy gateway. Failover to PostgreSQL read-replica active. <|emotion:elation|> Blast containment verified! System topology stabilized.`;
+  } else {
+    defaultScript = `<|prosody:speed_fast|> Executive Briefing for Cadence Architecture. <|sfx:cough|> Ahem. Our real-time event pipeline handles 120,000 events per second with sub-18ms P99 latency. <|emotion:elation|> By leveraging Boson AI 24kHz full-duplex speech, we have reduced audio infrastructure costs by 90% compared to legacy realtime APIs!`;
+  }
 
   const script = scriptText || defaultScript;
   const apiKey = config.bosonApiKey?.trim();
