@@ -1,12 +1,12 @@
 /**
- * High-tech UI synthesizer audio cues using Web Audio API oscillators.
+ * Synthesizer audio cues using Web Audio API in TypeScript.
  */
 
-let cueAudioCtx = null;
+let cueAudioCtx: AudioContext | null = null;
 
-function getCueContext() {
+function getCueContext(): AudioContext {
   if (!cueAudioCtx || cueAudioCtx.state === 'closed') {
-    const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+    const AudioCtxClass = window.AudioContext || (window as any).webkitAudioContext;
     cueAudioCtx = new AudioCtxClass();
   }
   if (cueAudioCtx.state === 'suspended') {
@@ -15,7 +15,7 @@ function getCueContext() {
   return cueAudioCtx;
 }
 
-export function playConnectCue() {
+export function playConnectCue(): void {
   try {
     const ctx = getCueContext();
     const osc = ctx.createOscillator();
@@ -39,7 +39,7 @@ export function playConnectCue() {
   }
 }
 
-export function playDisconnectCue() {
+export function playDisconnectCue(): void {
   try {
     const ctx = getCueContext();
     const osc = ctx.createOscillator();
@@ -63,7 +63,7 @@ export function playDisconnectCue() {
   }
 }
 
-export function playDiagramGeneratedCue() {
+export function playDiagramGeneratedCue(): void {
   try {
     const ctx = getCueContext();
     const now = ctx.currentTime;
