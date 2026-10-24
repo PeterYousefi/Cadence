@@ -2,12 +2,7 @@
  * Audio PCM conversion, resampling, and binary encoding utilities.
  */
 
-/**
- * Converts Float32 audio samples (-1.0 to 1.0) to 16-bit PCM ArrayBuffer.
- * @param {Float32Array} float32Array
- * @returns {ArrayBuffer}
- */
-export function floatTo16BitPCM(float32Array) {
+export function floatTo16BitPCM(float32Array: Float32Array): ArrayBuffer {
   const buffer = new ArrayBuffer(float32Array.length * 2);
   const view = new DataView(buffer);
   let offset = 0;
@@ -18,12 +13,7 @@ export function floatTo16BitPCM(float32Array) {
   return buffer;
 }
 
-/**
- * Converts 16-bit PCM bytes (Little Endian) to normalized Float32Array (-1.0 to 1.0).
- * @param {ArrayBuffer | Uint8Array} pcmBuffer
- * @returns {Float32Array}
- */
-export function pcm16ToFloat32(pcmBuffer) {
+export function pcm16ToFloat32(pcmBuffer: ArrayBuffer | Uint8Array): Float32Array {
   const bytes = pcmBuffer instanceof ArrayBuffer ? new Uint8Array(pcmBuffer) : pcmBuffer;
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const length = Math.floor(bytes.byteLength / 2);
@@ -36,14 +26,11 @@ export function pcm16ToFloat32(pcmBuffer) {
   return float32;
 }
 
-/**
- * Resamples an audio buffer from input sample rate to target sample rate via linear interpolation.
- * @param {Float32Array} buffer
- * @param {number} inputSampleRate
- * @param {number} targetSampleRate
- * @returns {Float32Array}
- */
-export function downsampleBuffer(buffer, inputSampleRate, targetSampleRate = 24000) {
+export function downsampleBuffer(
+  buffer: Float32Array,
+  inputSampleRate: number,
+  targetSampleRate: number = 24000
+): Float32Array {
   if (inputSampleRate === targetSampleRate) {
     return buffer;
   }
@@ -68,12 +55,7 @@ export function downsampleBuffer(buffer, inputSampleRate, targetSampleRate = 240
   return result;
 }
 
-/**
- * Encodes an ArrayBuffer or Uint8Array into a Base64 string.
- * @param {ArrayBuffer | Uint8Array} buffer
- * @returns {string}
- */
-export function arrayBufferToBase64(buffer) {
+export function arrayBufferToBase64(buffer: ArrayBuffer | Uint8Array): string {
   const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
   let binary = '';
   const len = bytes.byteLength;
@@ -81,18 +63,13 @@ export function arrayBufferToBase64(buffer) {
   for (let i = 0; i < len; i += chunkSize) {
     binary += String.fromCharCode.apply(
       null,
-      bytes.subarray(i, Math.min(i + chunkSize, len))
+      Array.from(bytes.subarray(i, Math.min(i + chunkSize, len)))
     );
   }
   return btoa(binary);
 }
 
-/**
- * Decodes a Base64 string into an ArrayBuffer.
- * @param {string} base64
- * @returns {ArrayBuffer}
- */
-export function base64ToArrayBuffer(base64) {
+export function base64ToArrayBuffer(base64: string): ArrayBuffer {
   const binaryString = atob(base64);
   const len = binaryString.length;
   const bytes = new Uint8Array(len);
