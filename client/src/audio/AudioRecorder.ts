@@ -73,13 +73,13 @@ export class AudioRecorder implements AudioVisualizerSource {
 
   public getTimeDomainData(targetArray: Uint8Array): void {
     if (this.analyser) {
-      this.analyser.getByteTimeDomainData(targetArray);
+      this.analyser.getByteTimeDomainData(targetArray as any);
     }
   }
 
   public getFrequencyData(targetArray: Uint8Array): void {
     if (this.analyser) {
-      this.analyser.getByteFrequencyData(targetArray);
+      this.analyser.getByteFrequencyData(targetArray as any);
     }
   }
 
