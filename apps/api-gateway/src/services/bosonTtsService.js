@@ -46,7 +46,8 @@ export async function generateHiggsTtsBriefing(scriptText, scenario = 'chaos-out
           input: script,
           voice: 'default',
           response_format: 'mp3'
-        })
+        }),
+        signal: AbortSignal.timeout(3500)
       });
 
       if (response.ok) {
