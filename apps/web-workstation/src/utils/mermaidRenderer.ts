@@ -1,5 +1,5 @@
 import mermaid from 'mermaid';
-import { sanitizeMermaidCode } from './mermaidParser';
+import { sanitizeMermaidAST } from '../../../../packages/schema-engine/src/sanitizer';
 
 let isInitialized = false;
 
@@ -7,25 +7,25 @@ export function initMermaid(): void {
   if (isInitialized) return;
   mermaid.initialize({
     startOnLoad: false,
-    theme: 'dark',
+    theme: 'base',
     securityLevel: 'loose',
-    fontFamily: 'Fira Code, monospace',
+    fontFamily: 'Space Grotesk, sans-serif',
     themeVariables: {
-      darkMode: true,
-      background: '#09090b',
-      primaryColor: '#1e1b4b',
-      primaryTextColor: '#f4f4f5',
-      primaryBorderColor: '#06b6d4',
-      lineColor: '#06b6d4',
-      secondaryColor: '#1e293b',
-      tertiaryColor: '#0f172a',
-      fontSize: '14px'
+      darkMode: false,
+      background: '#F4F3EF',
+      primaryColor: '#FFFFFF',
+      primaryTextColor: '#111111',
+      primaryBorderColor: '#111111',
+      lineColor: '#111111',
+      secondaryColor: '#F4F3EF',
+      tertiaryColor: '#FFFFFF',
+      fontSize: '18px'
     },
     flowchart: {
       curve: 'basis',
-      padding: 16,
-      nodeSpacing: 50,
-      rankSpacing: 50,
+      padding: 24,
+      nodeSpacing: 60,
+      rankSpacing: 60,
       htmlLabels: true
     }
   });
@@ -40,9 +40,16 @@ export interface MermaidRenderResult {
   error: string | null;
 }
 
-export async function renderMermaidSvg(rawCode: string): Promise<MermaidRenderResult> {
+export async function renderMermaidSvg(
+  rawCode: string,
+  highlightedComponent?: string,
+  failedComponents?: string[]
+): Promise<MermaidRenderResult> {
   initMermaid();
-  const sanitizedCode = sanitizeMermaidCode(rawCode);
+  const sanitizedCode = sanitizeMermaidAST(rawCode, {
+    highlightedComponent,
+    failedComponents
+  });
   const renderId = `cadence-mermaid-${Date.now()}-${counter++}`;
 
   try {
