@@ -38,6 +38,13 @@ export class AudioPlayer implements AudioVisualizerSource {
     }
   }
 
+  public async resume(): Promise<void> {
+    this.ensureContext();
+    if (this.audioCtx && this.audioCtx.state === 'suspended') {
+      await this.audioCtx.resume();
+    }
+  }
+
   public queueAudioDelta(rawAudio: string | ArrayBuffer): void {
     this.ensureContext();
     if (!this.audioCtx || !this.analyser) return;
