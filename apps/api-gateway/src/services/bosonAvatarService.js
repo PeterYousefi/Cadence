@@ -1,19 +1,13 @@
 import { config } from '../config.js';
 
-export interface AvatarSessionResponse {
-  sessionId: string;
-  portraitUrl: string;
-  streamUrl: string | null;
-  status: 'active' | 'queued' | 'simulated';
-  model: string;
-  lipSyncAvailable: boolean;
-}
-
-export async function createAvatarSpeechSession(options: {
-  script?: string;
-  customPortraitBase64?: string;
-  voiceId?: string;
-} = {}): Promise<AvatarSessionResponse> {
+/**
+ * Higgs Avatar Video Service
+ * @param {object} [options]
+ * @param {string} [options.script]
+ * @param {string} [options.customPortraitBase64]
+ * @param {string} [options.voiceId]
+ */
+export async function createAvatarSpeechSession(options = {}) {
   const apiKey = config.bosonApiKey?.trim();
   const sessionId = `avatar-sess-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 

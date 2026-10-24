@@ -4,15 +4,14 @@
   "description": "Cadence — Autonomous Real-Time Voice Systems Architect",
   "private": true,
   "scripts": {
-    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
-    "dev": "concurrently -n \"server,client\" -c \"magenta,cyan\" \"npm run dev:server\" \"npm run dev:client\"",
-    "dev:server": "cd server && npm run dev",
-    "dev:client": "cd client && npm run dev",
-    "start": "concurrently -n \"server,client\" -c \"magenta,cyan\" \"cd server && npm start\" \"cd client && npm run preview\"",
-    "build": "cd client && npm run build",
-    "test:server": "cd server && npm test",
-    "test:client": "node --experimental-strip-types client/test/mermaidParser.test.ts && node --experimental-strip-types client/test/audioPcm.test.ts",
-    "test": "npm run test:server && npm run test:client"
+    "install:all": "npm install && cd apps/api-gateway && npm install && cd ../web-workstation && npm install",
+    "dev": "concurrently -n \"gateway,workstation\" -c \"magenta,cyan\" \"npm run dev:gateway\" \"npm run dev:workstation\"",
+    "dev:gateway": "cd apps/api-gateway && npm run dev",
+    "dev:workstation": "cd apps/web-workstation && npm run dev",
+    "start": "concurrently -n \"gateway,workstation\" -c \"magenta,cyan\" \"cd apps/api-gateway && npm start\" \"cd apps/web-workstation && npm run preview\"",
+    "build": "cd apps/web-workstation && npm run build",
+    "test": "vitest run tests/cadence.test.ts",
+    "test:watch": "vitest tests/cadence.test.ts"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

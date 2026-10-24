@@ -1,25 +1,11 @@
 import { config } from '../config.js';
 
-export interface TTSWordTimestamp {
-  word: string;
-  startMs: number;
-  endMs: number;
-  isTag: boolean;
-}
-
-export interface TTSBriefingResponse {
-  audioBase64: string | null;
-  script: string;
-  words: TTSWordTimestamp[];
-  model: string;
-  durationMs: number;
-  provider: 'boson-live' | 'boson-simulated';
-}
-
 /**
  * Higgs TTS 3 Service with inline emotion/sfx tags and word-level timestamp generation.
+ * @param {string} [scriptText]
+ * @param {string} [scenario='chaos-outage']
  */
-export async function generateHiggsTtsBriefing(scriptText?: string, scenario = 'chaos-outage'): Promise<TTSBriefingResponse> {
+export async function generateHiggsTtsBriefing(scriptText, scenario = 'chaos-outage') {
   const defaultScript = scenario === 'chaos-outage'
     ? `<|emotion:urgent|> ALERT! Primary Redis cluster redis_cache has experienced sudden network isolation in us-east-1! <|sfx:sigh|> Blast radius has impacted 4 downstream order-fulfillment workers. <|prosody:speed_fast|> Initiating automated circuit breaker on Envoy gateway. Failover to PostgreSQL read-replica active. <|emotion:elation|> Blast containment verified! System topology stabilized.`
     : `<|prosody:speed_fast|> Executive Briefing for Cadence Architecture. <|sfx:cough|> Ahem. Our real-time event pipeline handles 120,000 events per second with sub-18ms P99 latency. <|emotion:elation|> By leveraging Boson AI 24kHz full-duplex speech, we have reduced audio infrastructure costs by 90% compared to legacy realtime APIs!`;
@@ -30,7 +16,7 @@ export async function generateHiggsTtsBriefing(scriptText?: string, scenario = '
   // Parse words and compute precise word-level timestamps
   const rawTokens = script.split(/(\s+|<\|[^|>]+\|>)/).filter((t) => t && t.trim().length > 0);
   let currentMs = 0;
-  const words: TTSWordTimestamp[] = [];
+  const words = [];
 
   for (const token of rawTokens) {
     const isTag = token.startsWith('<|') && token.endsWith('|>');

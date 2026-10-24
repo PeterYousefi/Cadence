@@ -9,13 +9,17 @@ export interface IaCManifests {
 }
 
 export function generateIaCFromMermaid(mermaidCode: string): IaCManifests {
-  // Extract node IDs and labels
-  const nodeRegex = /([a-zA-Z0-9_-]+)\[["']?([^"'\n\]]+)["']?\]/g;
+  // Extract node IDs and labels across brackets [], cylinders [()], rounded (), and stadiums ([])
+  const nodeRegex = /([a-zA-Z0-9_-]+)(?:\[\(?|\[|\()(?:"|')?([^"'\]\)\n]+)(?:"|')?(?:\]\)?|\]|\))/g;
   const nodes: { id: string; label: string }[] = [];
   let match;
 
   while ((match = nodeRegex.exec(mermaidCode)) !== null) {
-    nodes.push({ id: match[1], label: match[2] });
+    const rawId = match[1];
+    let label = match[2].trim().replace(/^[\(\["']+|[\)\]"']+$/g, '');
+    if (rawId.toLowerCase() !== 'subgraph' && rawId.toLowerCase() !== 'style') {
+      nodes.push({ id: rawId, label });
+    }
   }
 
   // Deduplicate
@@ -24,7 +28,9 @@ export function generateIaCFromMermaid(mermaidCode: string): IaCManifests {
   // Generate Terraform HCL
   const tfResources = uniqueNodes.map((n) => {
     const safeName = n.id.toLowerCase().replace(/[^a-z0-9_]/g, '_');
-    if (n.label.toLowerCase().includes('database') || n.label.toLowerCase().includes('postgres') || n.label.toLowerCase().includes('db')) {
+    const labelLower = n.label.toLowerCase();
+
+    if (labelLower.includes('database') || labelLower.includes('postgres') || labelLower.includes('db') || safeName.includes('db')) {
       return `resource "aws_db_instance" "${safeName}" {
   identifier           = "${safeName}-production"
   engine               = "postgres"
@@ -38,7 +44,7 @@ export function generateIaCFromMermaid(mermaidCode: string): IaCManifests {
     ManagedBy = "Cadence-Architect"
   }
 }`;
-    } else if (n.label.toLowerCase().includes('redis') || n.label.toLowerCase().includes('cache')) {
+    } else if (labelLower.includes('redis') || labelLower.includes('cache') || safeName.includes('cache')) {
       return `resource "aws_elasticache_cluster" "${safeName}" {
   cluster_id           = "${safeName}-cache"
   engine               = "redis"
@@ -50,7 +56,7 @@ export function generateIaCFromMermaid(mermaidCode: string): IaCManifests {
     ManagedBy = "Cadence-Architect"
   }
 }`;
-    } else if (n.label.toLowerCase().includes('kafka')) {
+    } else if (labelLower.includes('kafka') || safeName.includes('kafka') || safeName.includes('topic')) {
       return `resource "aws_msk_cluster" "${safeName}" {
   cluster_name           = "${safeName}-stream"
   kafka_version          = "3.5.1"
@@ -97,16 +103,17 @@ ${tfResources.join('\n\n')}
   // Generate Docker Compose YAML
   const composeServices = uniqueNodes.map((n) => {
     const safeName = n.id.toLowerCase().replace(/[^a-z0-9_]/g, '-');
+    const labelLower = n.label.toLowerCase();
     let image = 'alpine:latest';
     let ports = '["8080:8080"]';
 
-    if (n.label.toLowerCase().includes('postgres')) {
+    if (labelLower.includes('postgres') || labelLower.includes('db')) {
       image = 'postgres:16-alpine';
       ports = '["5432:5432"]';
-    } else if (n.label.toLowerCase().includes('redis')) {
+    } else if (labelLower.includes('redis') || labelLower.includes('cache')) {
       image = 'redis:7-alpine';
       ports = '["6379:6379"]';
-    } else if (n.label.toLowerCase().includes('kafka')) {
+    } else if (labelLower.includes('kafka')) {
       image = 'confluentinc/cp-kafka:7.5.0';
       ports = '["9092:9092"]';
     }
