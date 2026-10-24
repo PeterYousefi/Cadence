@@ -1,0 +1,11 @@
+{
+  "name": "@cadence/audio-dsp",
+  "version": "1.0.0",
+  "description": "24kHz PCM16 audio processing, 0.125s VAD interruption benchmark, and unit economics calculator",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {}
+}
