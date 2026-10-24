@@ -1,10 +1,34 @@
-import { BOSON_CONFIG, SYSTEM_INSTRUCTIONS } from '../constants/cadence.js';
+import { BOSON_CONFIG, SYSTEM_INSTRUCTIONS } from '../constants/cadence';
+import { ToolCallData } from '../types/cadence';
+
+export interface BosonWebSocketCallbacks {
+  onOpen?: (event: Event) => void;
+  onClose?: (event: CloseEvent) => void;
+  onError?: (event: Event) => void;
+  onAudioDelta?: (delta: string) => void;
+  onSpeechStarted?: () => void;
+  onSpeechStopped?: () => void;
+  onUserTranscript?: (transcript: string) => void;
+  onAgentTranscript?: (deltaOrDone: string, isDone: boolean) => void;
+  onToolCall?: (toolData: ToolCallData) => void;
+  onRawEvent?: (event: any) => void;
+}
+
+export interface BosonWebSocketOptions extends BosonWebSocketCallbacks {
+  token?: string;
+  wsUrl?: string;
+}
 
 export class BosonWebSocketClient {
-  constructor(options = {}) {
+  private token: string | null;
+  private wsUrl: string;
+  private ws: WebSocket | null = null;
+  private callbacks: Required<BosonWebSocketCallbacks>;
+  public isConnected: boolean = false;
+
+  constructor(options: BosonWebSocketOptions = {}) {
     this.token = options.token || null;
     this.wsUrl = options.wsUrl || BOSON_CONFIG.WS_URL;
-    this.ws = null;
     this.callbacks = {
       onOpen: options.onOpen || (() => {}),
       onClose: options.onClose || (() => {}),
@@ -17,10 +41,9 @@ export class BosonWebSocketClient {
       onToolCall: options.onToolCall || (() => {}),
       onRawEvent: options.onRawEvent || (() => {})
     };
-    this.isConnected = false;
   }
 
-  connect(ephemeralToken) {
+  public connect(ephemeralToken?: string): void {
     if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
       return;
     }
@@ -35,30 +58,30 @@ export class BosonWebSocketClient {
 
     this.ws = new WebSocket(this.wsUrl, subprotocols);
 
-    this.ws.onopen = (event) => {
+    this.ws.onopen = (event: Event) => {
       this.isConnected = true;
       console.log('[Cadence WS] Connection opened successfully');
       this.sendSessionUpdate();
       this.callbacks.onOpen(event);
     };
 
-    this.ws.onmessage = (event) => {
+    this.ws.onmessage = (event: MessageEvent) => {
       this.handleIncomingMessage(event);
     };
 
-    this.ws.onerror = (event) => {
+    this.ws.onerror = (event: Event) => {
       console.error('[Cadence WS] WebSocket error:', event);
       this.callbacks.onError(event);
     };
 
-    this.ws.onclose = (event) => {
+    this.ws.onclose = (event: CloseEvent) => {
       this.isConnected = false;
       console.log(`[Cadence WS] Connection closed (code: ${event.code}, reason: ${event.reason || 'none'})`);
       this.callbacks.onClose(event);
     };
   }
 
-  sendSessionUpdate() {
+  public sendSessionUpdate(): void {
     const sessionPayload = {
       type: 'session.update',
       session: {
@@ -105,11 +128,7 @@ export class BosonWebSocketClient {
     console.log('[Cadence WS] Dispatched session.update configuration');
   }
 
-  /**
-   * Append PCM audio chunk from microphone
-   * @param {string} base64Chunk
-   */
-  appendAudioBuffer(base64Chunk) {
+  public appendAudioBuffer(base64Chunk: string): void {
     if (!this.isConnected || !this.ws || this.ws.readyState !== WebSocket.OPEN) return;
     this.send({
       type: 'input_audio_buffer.append',
@@ -117,8 +136,8 @@ export class BosonWebSocketClient {
     });
   }
 
-  handleIncomingMessage(event) {
-    let data;
+  private handleIncomingMessage(event: MessageEvent): void {
+    let data: any;
     try {
       data = JSON.parse(event.data);
     } catch {
@@ -128,14 +147,12 @@ export class BosonWebSocketClient {
     this.callbacks.onRawEvent(data);
 
     switch (data.type) {
-      // Audio stream delta from Boson TTS
       case 'response.output_audio.delta':
         if (data.delta) {
           this.callbacks.onAudioDelta(data.delta);
         }
         break;
 
-      // Realtime text transcript from agent
       case 'response.audio_transcript.delta':
         if (data.delta) {
           this.callbacks.onAgentTranscript(data.delta, false);
@@ -148,7 +165,6 @@ export class BosonWebSocketClient {
         }
         break;
 
-      // User speech barge-in detection
       case 'input_audio_buffer.speech_started':
         console.log('[Cadence WS] VAD speech_started -> trigger barge-in flush');
         this.callbacks.onSpeechStarted();
@@ -158,14 +174,12 @@ export class BosonWebSocketClient {
         this.callbacks.onSpeechStopped();
         break;
 
-      // User STT transcription
       case 'conversation.item.input_audio_transcription.completed':
         if (data.transcript) {
           this.callbacks.onUserTranscript(data.transcript);
         }
         break;
 
-      // Function/Tool Call response
       case 'response.done':
         this.handleResponseDone(data);
         break;
@@ -175,12 +189,12 @@ export class BosonWebSocketClient {
     }
   }
 
-  handleResponseDone(data) {
+  private handleResponseDone(data: any): void {
     const outputItems = data.response?.output || [];
     for (const item of outputItems) {
       if (item.type === 'function_call' && item.name === 'render_architecture') {
         const callId = item.call_id;
-        let parsedArgs = {};
+        let parsedArgs: any = {};
         try {
           parsedArgs = typeof item.arguments === 'string' ? JSON.parse(item.arguments) : item.arguments;
         } catch (e) {
@@ -203,13 +217,7 @@ export class BosonWebSocketClient {
     }
   }
 
-  /**
-   * Complete tool handshake and trigger agent verbal response
-   * @param {string} callId
-   * @param {object} output
-   */
-  sendToolResponse(callId, output = { status: 'success' }) {
-    // 1. Tool result item
+  public sendToolResponse(callId: string, output: Record<string, any> = { status: 'success' }): void {
     this.send({
       type: 'conversation.item.create',
       item: {
@@ -219,19 +227,18 @@ export class BosonWebSocketClient {
       }
     });
 
-    // 2. Request Cadence verbal confirmation response
     this.send({
       type: 'response.create'
     });
   }
 
-  send(obj) {
+  public send(obj: any): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(obj));
     }
   }
 
-  disconnect() {
+  public disconnect(): void {
     if (this.ws) {
       try {
         this.ws.close();
