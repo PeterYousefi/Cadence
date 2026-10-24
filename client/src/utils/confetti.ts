@@ -1,19 +1,19 @@
 import confetti from 'canvas-confetti';
 
 /**
- * Fires a high-tech cyberpunk celebration burst of particles.
+ * High-tech cyberpunk celebration burst of particles.
  */
-export function fireCyberpunkConfetti() {
-  const count = 40;
+export function fireCyberpunkConfetti(): void {
+  const count = 45;
   const defaults = {
-    origin: { y: 0.7 },
+    origin: { y: 0.65 },
     colors: ['#06b6d4', '#8b5cf6', '#10b981', '#ec4899', '#f59e0b']
   };
 
   confetti({
     ...defaults,
     particleCount: count,
-    spread: 60,
+    spread: 65,
     startVelocity: 35
   });
 
