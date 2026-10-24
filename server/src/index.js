@@ -1,0 +1,44 @@
+import express from 'express';
+import cors from 'cors';
+import { config } from './config.js';
+import { healthRouter } from './routes/health.js';
+import { sessionRouter } from './routes/session.js';
+import { errorHandler } from './middleware/errorHandler.js';
+
+const app = express();
+
+// Enable CORS for development and production Vite clients
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+app.use(express.json());
+
+// Request logger
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`[Cadence HTTP] ${req.method} ${req.url} ${res.statusCode} (${duration}ms)`);
+  });
+  next();
+});
+
+// API Routes
+app.use('/api', healthRouter);
+app.use('/api', sessionRouter);
+
+// Fallback error handler
+app.use(errorHandler);
+
+// Start server
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(config.port, () => {
+    console.log(`🚀 Cadence Backend listening on http://localhost:${config.port}`);
+    console.log(`🔑 Boson API Key status: ${config.bosonApiKey ? 'Configured' : 'Missing (provide BOSON_API_KEY)'}`);
+  });
+}
+
+export { app };
