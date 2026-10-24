@@ -45,6 +45,7 @@ const isDirectRun = process.argv[1] && import.meta.url.endsWith(process.argv[1].
 if (isDirectRun || process.env.RUN_STANDALONE === 'true') {
   app.listen(config.port, () => {
     console.log(`🚀 Cadence API Gateway listening on http://localhost:${config.port}`);
+    console.log(`BOSON_API_KEY loaded: ${Boolean(process.env.BOSON_API_KEY)}`);
     console.log(`🔑 Boson API Key status: ${config.bosonApiKey ? 'Configured' : 'Missing (provide BOSON_API_KEY)'}`);
   });
 }

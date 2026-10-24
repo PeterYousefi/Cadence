@@ -6,20 +6,10 @@ import { config } from '../config.js';
  * @returns {Promise<{ client_secret: { value: string, expires_at: number } }>}
  */
 export async function mintEphemeralToken(expiresAfterSeconds = 3600) {
-  const apiKey = config.bosonApiKey?.trim();
+  const apiKey = config.bosonApiKey?.trim() || process.env.BOSON_API_KEY?.trim();
 
   if (!apiKey) {
-    if (process.env.DEMO_MODE === 'true' || process.env.MOCK_BOSON === 'true') {
-      console.warn('[Cadence Server] BOSON_API_KEY missing; generating mock ephemeral token for simulation mode');
-      return {
-        client_secret: {
-          value: `bai-eph-simulated-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-          expires_at: Math.floor(Date.now() / 1000) + expiresAfterSeconds
-        },
-        mode: 'mock'
-      };
-    }
-    throw new Error('BOSON_API_KEY environment variable is not configured. Please supply a valid Boson AI API key in server/.env.');
+    throw new Error('BOSON_API_KEY environment variable is not configured. Please supply a valid Boson AI API key in .env.');
   }
 
   const endpoint = 'https://api.boson.ai/v1/realtime/client_secrets';
@@ -34,7 +24,8 @@ export async function mintEphemeralToken(expiresAfterSeconds = 3600) {
       expires_after: {
         seconds: expiresAfterSeconds
       }
-    })
+    }),
+    signal: AbortSignal.timeout(6000)
   });
 
   if (!response.ok) {
@@ -52,13 +43,21 @@ export async function mintEphemeralToken(expiresAfterSeconds = 3600) {
   }
 
   const data = await response.json();
-  const secretValue = data.value || data.client_secret?.value || data.client_secret;
+  console.log('[Cadence Gateway] Boson client_secrets raw response:', JSON.stringify(data));
+
+  const secretValue = data.value || data.client_secret?.value || data.token || data.secret || (typeof data.client_secret === 'string' ? data.client_secret : null);
+
+  if (!secretValue) {
+    throw new Error('Boson client_secrets response did not contain an ephemeral secret value.');
+  }
+
   return {
-    ...data,
+    token: secretValue,
     value: secretValue,
+    raw: data,
     client_secret: {
       value: secretValue,
-      expires_at: data.expires_at || (Math.floor(Date.now() / 1000) + expiresAfterSeconds)
+      expires_at: data.expires_at || data.client_secret?.expires_at || (Math.floor(Date.now() / 1000) + expiresAfterSeconds)
     }
   };
 }
