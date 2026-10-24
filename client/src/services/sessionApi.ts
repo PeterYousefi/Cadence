@@ -2,7 +2,13 @@
  * Client service to acquire ephemeral tokens from Cadence backend proxy.
  */
 
-export async function fetchEphemeralToken() {
+export interface EphemeralSessionResult {
+  secret: string;
+  expiresAt: number | null;
+  isMock: boolean;
+}
+
+export async function fetchEphemeralToken(): Promise<EphemeralSessionResult> {
   const response = await fetch('/api/session', {
     method: 'POST',
     headers: {
