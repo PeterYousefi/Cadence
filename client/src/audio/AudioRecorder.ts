@@ -1,23 +1,33 @@
-import { floatTo16BitPCM, downsampleBuffer, arrayBufferToBase64 } from '../utils/audioPcm.js';
-import { AUDIO_CONFIG } from '../constants/cadence.js';
+import { floatTo16BitPCM, downsampleBuffer, arrayBufferToBase64 } from '../utils/audioPcm';
+import { AUDIO_CONFIG } from '../constants/cadence';
+import { AudioVisualizerSource } from '../types/cadence';
 
-export class AudioRecorder {
-  constructor(options = {}) {
+export interface AudioRecorderOptions {
+  sampleRate?: number;
+  bufferSize?: number;
+  onAudioChunk?: (base64Chunk: string) => void;
+}
+
+export class AudioRecorder implements AudioVisualizerSource {
+  private targetSampleRate: number;
+  private bufferSize: number;
+  private onAudioChunk?: (base64Chunk: string) => void;
+  private stream: MediaStream | null = null;
+  private audioCtx: AudioContext | null = null;
+  private source: MediaStreamAudioSourceNode | null = null;
+  private processor: ScriptProcessorNode | null = null;
+  private analyser: AnalyserNode | null = null;
+  public isRecording: boolean = false;
+
+  constructor(options: AudioRecorderOptions = {}) {
     this.targetSampleRate = options.sampleRate || AUDIO_CONFIG.SAMPLE_RATE;
     this.bufferSize = options.bufferSize || 4096;
-    this.onAudioChunk = options.onAudioChunk || null;
-    this.stream = null;
-    this.audioCtx = null;
-    this.source = null;
-    this.processor = null;
-    this.analyser = null;
-    this.isRecording = false;
+    this.onAudioChunk = options.onAudioChunk;
   }
 
-  async start() {
+  public async start(): Promise<void> {
     if (this.isRecording) return;
 
-    // Request 24000 Hz mono mic if supported, or adapt to hardware default
     this.stream = await navigator.mediaDevices.getUserMedia({
       audio: {
         sampleRate: this.targetSampleRate,
@@ -28,13 +38,13 @@ export class AudioRecorder {
       }
     });
 
-    const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+    const AudioCtxClass = window.AudioContext || (window as any).webkitAudioContext;
     this.audioCtx = new AudioCtxClass();
     const actualInputSampleRate = this.audioCtx.sampleRate;
 
     this.source = this.audioCtx.createMediaStreamSource(this.stream);
 
-    // Mic Analyser for live visualizer
+    // Mic Analyser for live oscilloscope
     this.analyser = this.audioCtx.createAnalyser();
     this.analyser.fftSize = 512;
     this.analyser.smoothingTimeConstant = 0.7;
@@ -43,17 +53,12 @@ export class AudioRecorder {
     // Audio processor node for PCM chunks
     this.processor = this.audioCtx.createScriptProcessor(this.bufferSize, 1, 1);
 
-    this.processor.onaudioprocess = (event) => {
+    this.processor.onaudioprocess = (event: AudioProcessingEvent) => {
       if (!this.isRecording) return;
       const inputData = event.inputBuffer.getChannelData(0);
 
-      // Downsample to 24 kHz if input is higher (e.g., 44.1k or 48k)
       const resampledData = downsampleBuffer(inputData, actualInputSampleRate, this.targetSampleRate);
-
-      // Convert Float32 to 16-bit PCM ArrayBuffer
       const pcmBuffer = floatTo16BitPCM(resampledData);
-
-      // Encode Base64
       const base64Chunk = arrayBufferToBase64(pcmBuffer);
 
       if (this.onAudioChunk) {
@@ -66,19 +71,19 @@ export class AudioRecorder {
     this.isRecording = true;
   }
 
-  getTimeDomainData(targetArray) {
+  public getTimeDomainData(targetArray: Uint8Array): void {
     if (this.analyser) {
       this.analyser.getByteTimeDomainData(targetArray);
     }
   }
 
-  getFrequencyData(targetArray) {
+  public getFrequencyData(targetArray: Uint8Array): void {
     if (this.analyser) {
       this.analyser.getByteFrequencyData(targetArray);
     }
   }
 
-  stop() {
+  public stop(): void {
     this.isRecording = false;
 
     if (this.processor) {
