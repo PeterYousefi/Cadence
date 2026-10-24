@@ -10,6 +10,7 @@ import { BosonWebSocketClient } from './services/bosonWebSocket.js';
 import { fetchEphemeralToken } from './services/sessionApi.js';
 import { renderMermaidSvg } from './utils/mermaidRenderer.js';
 import { fireCyberpunkConfetti } from './utils/confetti.js';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts.js';
 import { ARCHITECTURE_PRESETS } from './constants/presets.js';
 import { WS_STATUS } from './constants/cadence.js';
 
@@ -259,6 +260,13 @@ export function App() {
       text: `[Quick Preset] Switched architecture to: ${preset.title}`
     });
   };
+
+  // Keyboard shortcuts (Space for mic toggle, Esc to close guide, Cmd/Ctrl+K to toggle guide)
+  useKeyboardShortcuts({
+    onToggleMic: handleToggleMic,
+    onCloseModals: () => setIsHelpOpen(false),
+    onToggleHelp: () => setIsHelpOpen((prev) => !prev)
+  });
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-zinc-950 text-zinc-100">
