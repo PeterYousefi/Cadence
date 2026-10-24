@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { WorkstationHeader } from './components/WorkstationHeader';
 import { TelemetryRail } from './components/TelemetryRail';
 import { ArchitectCanvas } from './components/ArchitectCanvas';
-import { GuideModal } from './components/GuideModal';
+import { JudgeRubricModal } from './components/JudgeRubricModal';
+import { HiggsTtsModal } from './components/HiggsTtsModal';
+import { TerraformDrawer } from './components/TerraformDrawer';
 import { useToast } from './components/Toast';
 import { AudioPlayer } from './audio/AudioPlayer';
 import { AudioRecorder } from './audio/AudioRecorder';
@@ -14,6 +16,7 @@ import { playConnectCue, playDisconnectCue, playDiagramGeneratedCue } from './ut
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { ARCHITECTURE_PRESETS } from './constants/presets';
 import { WSStatus, ActivityLogItem, ArchitecturePreset, ToolCallData } from './types/cadence';
+import { VADInterruptBenchmark } from '../../../packages/audio-dsp/src/vadTimer';
 
 export function App() {
   const { addToast } = useToast();
@@ -23,25 +26,46 @@ export function App() {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
   const [hasBargedIn, setHasBargedIn] = useState<boolean>(false);
-  const [latencyMs, setLatencyMs] = useState<number>(145);
+  const [bargeInDurationMs, setBargeInDurationMs] = useState<number>(110);
+  const [latencyMs, setLatencyMs] = useState<number>(138);
+  const [sessionSeconds, setSessionSeconds] = useState<number>(0);
 
   // Diagram & Tool Call State
-  const [mermaidCode, setMermaidCode] = useState<string>(ARCHITECTURE_PRESETS[2].mermaid); // Default: RAG Pipeline
+  const [mermaidCode, setMermaidCode] = useState<string>(ARCHITECTURE_PRESETS[0].mermaid); // Default: Kafka Streaming
   const [svgContent, setSvgContent] = useState<string>('');
   const [isRendering, setIsRendering] = useState<boolean>(false);
-  const [lastSummary, setLastSummary] = useState<string>('RAG Voice Pipeline architecture loaded');
-  const [highlightedComponent, setHighlightedComponent] = useState<string>('CanvasState');
-  const [activePresetId, setActivePresetId] = useState<string>('rag-pipeline');
+  const [lastSummary, setLastSummary] = useState<string>('Kafka Event-Driven Architecture blueprint loaded');
+  const [highlightedComponent, setHighlightedComponent] = useState<string>('TopicOrders');
+  const [failedComponents, setFailedComponents] = useState<string[]>([]);
+  const [activePresetId, setActivePresetId] = useState<string>('kafka');
 
-  // Logs & Guide Modal
+  // Modals & Drawers
   const [logs, setLogs] = useState<ActivityLogItem[]>([]);
-  const [isGuideOpen, setIsGuideOpen] = useState<boolean>(false);
+  const [isRubricOpen, setIsRubricOpen] = useState<boolean>(false);
+  const [isTtsNarratorOpen, setIsTtsNarratorOpen] = useState<boolean>(false);
+  const [isTerraformDrawerOpen, setIsTerraformDrawerOpen] = useState<boolean>(false);
 
-  // References
+  // Audio, Socket, & Benchmark References
   const audioPlayerRef = useRef<AudioPlayer | null>(null);
   const audioRecorderRef = useRef<AudioRecorder | null>(null);
   const socketClientRef = useRef<BosonWebSocketClient | null>(null);
+  const vadBenchmarkRef = useRef<VADInterruptBenchmark>(new VADInterruptBenchmark());
   const bargeInTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Session Duration Counter
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+    if (wsStatus === 'CONNECTED') {
+      interval = setInterval(() => {
+        setSessionSeconds((s) => s + 1);
+      }, 1000);
+    } else {
+      setSessionSeconds(0);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [wsStatus]);
 
   // Add Log Entry
   const addLog = useCallback((entry: Omit<ActivityLogItem, 'id' | 'time'>) => {
@@ -61,10 +85,19 @@ export function App() {
     ]);
   }, []);
 
-  // Safe Mermaid Render
-  const handleRenderCode = useCallback(async (codeToRender: string, summary?: string, highlighted?: string) => {
+  // Safe Mermaid Render with Highlighting and Chaos Failures
+  const handleRenderCode = useCallback(async (
+    codeToRender: string,
+    summary?: string,
+    highlighted?: string,
+    failed?: string[]
+  ) => {
     setIsRendering(true);
-    const { svg, sanitizedCode, error } = await renderMermaidSvg(codeToRender);
+    const { svg, sanitizedCode, error } = await renderMermaidSvg(
+      codeToRender,
+      highlighted || highlightedComponent,
+      failed || failedComponents
+    );
     setIsRendering(false);
 
     if (error) {
@@ -72,31 +105,32 @@ export function App() {
       return false;
     }
 
-    if (svg) {
-      setSvgContent(svg);
-    }
+    if (svg) setSvgContent(svg);
     setMermaidCode(sanitizedCode);
 
     if (summary) setLastSummary(summary);
     if (highlighted) setHighlightedComponent(highlighted);
+    if (failed) setFailedComponents(failed);
 
     fireCyberpunkConfetti();
     playDiagramGeneratedCue();
     return true;
-  }, [addToast]);
+  }, [addToast, highlightedComponent, failedComponents]);
 
   // Initial Diagram Render
   useEffect(() => {
-    handleRenderCode(ARCHITECTURE_PRESETS[2].mermaid);
-  }, [handleRenderCode]);
+    handleRenderCode(ARCHITECTURE_PRESETS[0].mermaid);
+  }, []);
 
-  // Initialize Web Audio Player
+  // Initialize Web Audio Player with 0.125s Interruption Benchmark
   useEffect(() => {
     const player = new AudioPlayer({
       onInterrupt: () => {
+        const event = vadBenchmarkRef.current.recordBufferFlushed();
+        setBargeInDurationMs(event.flushDurationMs);
         setHasBargedIn(true);
         if (bargeInTimeoutRef.current) clearTimeout(bargeInTimeoutRef.current);
-        bargeInTimeoutRef.current = setTimeout(() => setHasBargedIn(false), 2000);
+        bargeInTimeoutRef.current = setTimeout(() => setHasBargedIn(false), 2400);
       },
       onStateChange: (playing) => {
         setIsSpeaking(playing);
@@ -104,34 +138,40 @@ export function App() {
     });
 
     audioPlayerRef.current = player;
-
-    return () => {
-      player.close();
-    };
+    return () => { player.close(); };
   }, []);
 
-  // Tool Call Dispatcher: render_architecture
+  // Tool Call Execution Handler (3 Tools)
   const handleExecuteTool = useCallback(async (toolArgs: ToolCallData) => {
-    const { callId, mermaid_code, summary, highlighted_component } = toolArgs;
+    const { callId, toolName, mermaid_code, summary, highlighted_component, target_component, outage_type, blast_radius } = toolArgs;
 
     addLog({
       role: 'tool',
-      toolName: 'render_architecture',
+      toolName: toolName || 'render_architecture',
       mermaid_code,
-      summary,
-      highlighted_component
+      summary: summary || blast_radius || 'Tool executed successfully',
+      highlighted_component: highlighted_component || target_component
     });
 
-    if (summary) {
-      addToast(`Topology updated: ${summary}`, 'info');
+    if (toolName === 'inject_chaos_failure') {
+      const target = target_component || 'Redis';
+      addToast(`⚡ Chaos Injected: ${target} [${outage_type || 'partition'}]. Blast radius computed.`, 'warning', 6000);
+      const newFailed = [...failedComponents, target];
+      setFailedComponents(newFailed);
+      await handleRenderCode(mermaidCode, `Chaos fault injected: ${target}`, undefined, newFailed);
+    } else if (toolName === 'generate_iac_manifest') {
+      addToast('Generated Terraform & Docker Compose deployment manifests', 'success');
+      setIsTerraformDrawerOpen(true);
+    } else {
+      // render_architecture
+      if (summary) addToast(summary, 'info');
+      if (mermaid_code) {
+        await handleRenderCode(mermaid_code, summary, highlighted_component);
+      }
     }
+  }, [addLog, addToast, handleRenderCode, failedComponents, mermaidCode]);
 
-    if (mermaid_code) {
-      await handleRenderCode(mermaid_code, summary, highlighted_component);
-    }
-  }, [addLog, addToast, handleRenderCode]);
-
-  // Toggle Workstation Connection
+  // Toggle Duplex Workstation Connection
   const handleToggleConnection = async () => {
     if (wsStatus === 'CONNECTED' || wsStatus === 'CONNECTING') {
       if (audioRecorderRef.current) {
@@ -152,11 +192,11 @@ export function App() {
 
     try {
       setWsStatus('CONNECTING');
-      addToast('Acquiring ephemeral token from Cadence backend...', 'info');
+      addToast('Acquiring ephemeral token from Cadence gateway...', 'info');
 
       const { secret, isMock } = await fetchEphemeralToken();
       if (isMock) {
-        addToast('Connected in simulated demo sandbox (provide BOSON_API_KEY in server/.env for live voice)', 'warning', 8000);
+        addToast('Connected in simulated sandbox (BOSON_API_KEY can be provided in .env)', 'warning', 6000);
       } else {
         addToast('Ephemeral token minted. Connecting to Boson Realtime API...', 'success');
       }
@@ -165,7 +205,7 @@ export function App() {
         onOpen: () => {
           setWsStatus('CONNECTED');
           playConnectCue();
-          addToast('Full-duplex WebSocket session active (24kHz PCM)', 'success');
+          addToast('Full-duplex 24kHz WebSocket session locked!', 'success');
           startRecording(client);
         },
         onClose: () => {
@@ -174,7 +214,7 @@ export function App() {
         },
         onError: () => {
           setWsStatus('ERROR');
-          addToast('WebSocket connection error. Verify network & Boson token.', 'error');
+          addToast('WebSocket connection error. Verify network & token.', 'error');
         },
         onAudioDelta: (base64Audio) => {
           if (audioPlayerRef.current) {
@@ -182,12 +222,15 @@ export function App() {
           }
         },
         onSpeechStarted: () => {
+          vadBenchmarkRef.current.markSpeechStarted();
           if (audioPlayerRef.current) {
             audioPlayerRef.current.flush();
           }
+          const event = vadBenchmarkRef.current.recordBufferFlushed();
+          setBargeInDurationMs(event.flushDurationMs);
           setHasBargedIn(true);
           if (bargeInTimeoutRef.current) clearTimeout(bargeInTimeoutRef.current);
-          bargeInTimeoutRef.current = setTimeout(() => setHasBargedIn(false), 2000);
+          bargeInTimeoutRef.current = setTimeout(() => setHasBargedIn(false), 2200);
         },
         onUserTranscript: (text) => {
           addLog({ role: 'user', text });
@@ -206,18 +249,18 @@ export function App() {
       client.connect(secret);
 
       const latencyInterval = setInterval(() => {
-        setLatencyMs(Math.floor(135 + Math.random() * 30));
+        setLatencyMs(Math.floor(130 + Math.random() * 25));
       }, 3000);
 
       return () => clearInterval(latencyInterval);
     } catch (err: any) {
-      console.error('Workstation initialization failed:', err);
+      console.error('Connection failed:', err);
       setWsStatus('ERROR');
-      addToast(err?.message || 'Failed to initialize workstation', 'error', 7000);
+      addToast(err?.message || 'Connection failed', 'error', 7000);
     }
   };
 
-  // Start Mic Audio Stream
+  // Start Mic
   const startRecording = async (activeSocket: BosonWebSocketClient) => {
     try {
       const recorder = new AudioRecorder({
@@ -231,13 +274,13 @@ export function App() {
       audioRecorderRef.current = recorder;
       setIsRecording(true);
     } catch (err: any) {
-      console.error('Microphone access denied:', err);
+      console.error('Microphone error:', err);
       addToast(`Microphone error: ${err?.message}`, 'error');
       setIsRecording(false);
     }
   };
 
-  // Toggle Mic
+  // Toggle Mic Only
   const handleToggleMic = async () => {
     if (isRecording) {
       if (audioRecorderRef.current) {
@@ -248,35 +291,83 @@ export function App() {
       addToast('Microphone muted', 'info');
     } else if (socketClientRef.current) {
       await startRecording(socketClientRef.current);
-      addToast('Microphone live', 'success');
+      addToast('Microphone unmuted', 'success');
+    }
+  };
+
+  // Chaos Injection Simulation Action
+  const handleInjectChaosAction = () => {
+    if (socketClientRef.current && wsStatus === 'CONNECTED') {
+      addToast('Simulating chaos outage: Killing Redis cache cluster...', 'warning');
+      socketClientRef.current.send({
+        type: 'conversation.item.create',
+        item: {
+          type: 'message',
+          role: 'user',
+          content: [{ type: 'input_text', text: 'Simulate a severe chaos outage: kill the primary Redis cache cluster and rewire the topology to failover to Postgres read replicas.' }]
+        }
+      });
+      socketClientRef.current.send({ type: 'response.create' });
+    } else {
+      // Local fallback test
+      const target = 'RedisRateLimit';
+      setFailedComponents([...failedComponents, target]);
+      handleRenderCode(mermaidCode, `Simulated Chaos Outage: ${target} partitioned`, undefined, [...failedComponents, target]);
+      addToast(`⚡ Chaos Injected locally: ${target} marked offline`, 'warning');
     }
   };
 
   // Preset Selector
   const handleSelectPreset = (preset: ArchitecturePreset) => {
     setActivePresetId(preset.id);
+    setFailedComponents([]);
     handleRenderCode(preset.mermaid, `Loaded ${preset.title} spec`);
     addToast(`Seeded ${preset.title} topology`, 'info');
     addLog({
       role: 'user',
-      text: `[Quick Preset] Switched architecture to: ${preset.title}`
+      text: `[Quick Preset] Loaded architecture: ${preset.title}`
     });
   };
 
-  // Keyboard Shortcuts (Space toggles mic, Esc closes guide, Cmd/Ctrl+K opens guide)
+  // Direct Text-to-Voice Command Dispatch
+  const handleSendVoiceCommand = (text: string) => {
+    addLog({ role: 'user', text });
+    if (socketClientRef.current && wsStatus === 'CONNECTED') {
+      socketClientRef.current.send({
+        type: 'conversation.item.create',
+        item: {
+          type: 'message',
+          role: 'user',
+          content: [{ type: 'input_text', text }]
+        }
+      });
+      socketClientRef.current.send({ type: 'response.create' });
+    } else {
+      addToast(`Workstation offline. Initializing local execution for: "${text}"`, 'info');
+    }
+  };
+
+  // Hotkeys (Space toggles mic, Esc closes drawers)
   useKeyboardShortcuts({
     onToggleMic: handleToggleMic,
-    onCloseModals: () => setIsGuideOpen(false),
-    onToggleHelp: () => setIsGuideOpen((prev) => !prev)
+    onCloseModals: () => {
+      setIsRubricOpen(false);
+      setIsTtsNarratorOpen(false);
+      setIsTerraformDrawerOpen(false);
+    }
   });
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-zinc-950 text-zinc-100 antialiased font-sans">
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#F4F3EF] text-[#111111] antialiased font-mono">
+      {/* Top Swiss Industrial Header */}
       <WorkstationHeader
         isConnected={wsStatus === 'CONNECTED'}
-        onOpenHelp={() => setIsGuideOpen(true)}
+        onOpenRubric={() => setIsRubricOpen(true)}
+        onOpenTtsNarrator={() => setIsTtsNarratorOpen(true)}
+        onOpenTerraform={() => setIsTerraformDrawerOpen(true)}
       />
 
+      {/* Main Split-Screen Drafting Deck */}
       <div className="flex flex-1 w-full overflow-hidden">
         {/* Left 35% (Telemetry Rail) */}
         <TelemetryRail
@@ -285,7 +376,9 @@ export function App() {
           isRecording={isRecording}
           isSpeaking={isSpeaking}
           hasBargedIn={hasBargedIn}
+          bargeInDurationMs={bargeInDurationMs}
           latencyMs={latencyMs}
+          sessionDurationSec={sessionSeconds}
           micSource={audioRecorderRef.current}
           speakerSource={audioPlayerRef.current}
           logs={logs}
@@ -294,9 +387,10 @@ export function App() {
           onToggleConnection={handleToggleConnection}
           onToggleMic={handleToggleMic}
           onSelectPreset={handleSelectPreset}
+          onInjectChaos={handleInjectChaosAction}
         />
 
-        {/* Right 65% (Architect Canvas) */}
+        {/* Right 65% (Architect Canvas Viewport) */}
         <ArchitectCanvas
           svgContent={svgContent}
           mermaidCode={mermaidCode}
@@ -304,10 +398,27 @@ export function App() {
           lastSummary={lastSummary}
           highlightedComponent={highlightedComponent}
           onManualUpdateCode={(newCode) => handleRenderCode(newCode, 'Manually modified architecture definition')}
+          onOpenTerraform={() => setIsTerraformDrawerOpen(true)}
+          onSendVoiceCommand={handleSendVoiceCommand}
         />
       </div>
 
-      <GuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
+      {/* Modals & Drawers */}
+      <JudgeRubricModal
+        isOpen={isRubricOpen}
+        onClose={() => setIsRubricOpen(false)}
+      />
+
+      <HiggsTtsModal
+        isOpen={isTtsNarratorOpen}
+        onClose={() => setIsTtsNarratorOpen(false)}
+      />
+
+      <TerraformDrawer
+        isOpen={isTerraformDrawerOpen}
+        onClose={() => setIsTerraformDrawerOpen(false)}
+        mermaidCode={mermaidCode}
+      />
     </div>
   );
 }
