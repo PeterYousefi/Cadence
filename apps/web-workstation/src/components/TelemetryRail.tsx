@@ -22,7 +22,8 @@ import {
   Wrench, 
   Trash2, 
   Flame,
-  ChevronRight
+  ChevronRight,
+  Send
 } from 'lucide-react';
 import { calculateSessionEconomics } from '../../../../packages/audio-dsp/src/unitEconomics';
 
@@ -35,6 +36,8 @@ interface TelemetryRailProps {
   bargeInDurationMs: number;
   latencyMs: number;
   sessionDurationSec: number;
+  micRms: number;
+  audioChunksRx: number;
   micSource: AudioVisualizerSource | null;
   speakerSource: AudioVisualizerSource | null;
   logs: ActivityLogItem[];
@@ -42,6 +45,7 @@ interface TelemetryRailProps {
   onClearLogs: () => void;
   onToggleConnection: () => void;
   onToggleMic: () => void;
+  onForceCommitTurn: () => void;
   onSelectPreset: (preset: ArchitecturePreset) => void;
   onInjectChaos: () => void;
 }
@@ -55,6 +59,8 @@ export function TelemetryRail({
   bargeInDurationMs,
   latencyMs,
   sessionDurationSec,
+  micRms,
+  audioChunksRx,
   micSource,
   speakerSource,
   logs,
@@ -62,6 +68,7 @@ export function TelemetryRail({
   onClearLogs,
   onToggleConnection,
   onToggleMic,
+  onForceCommitTurn,
   onSelectPreset,
   onInjectChaos
 }: TelemetryRailProps) {
@@ -139,6 +146,21 @@ export function TelemetryRail({
             {isRecording ? <Mic className="w-4 h-4 animate-pulse" /> : <MicOff className="w-4 h-4 text-[#767676]" />}
           </button>
 
+          {/* Manual Force Turn / Reply Button */}
+          <button
+            onClick={onForceCommitTurn}
+            disabled={!isConnected}
+            className={`flex items-center gap-1 py-2 px-2.5 border border-[#111111] text-[10px] font-bold uppercase tracking-wider transition-all ${
+              !isConnected
+                ? 'bg-[#EBEAE5] text-[#767676] cursor-not-allowed'
+                : 'bg-[#FF4F00] hover:bg-[#e04500] text-[#FFFFFF] shadow-cad-sm active:translate-x-[1px] active:translate-y-[1px] active:shadow-none'
+            }`}
+            title="Force commit audio buffer & trigger immediate Boson AI reply"
+          >
+            <Send className="w-3.5 h-3.5" />
+            <span>FORCE REPLY</span>
+          </button>
+
           {/* Quick Chaos Inject Button */}
           <button
             onClick={onInjectChaos}
@@ -153,6 +175,27 @@ export function TelemetryRail({
             <Flame className="w-3.5 h-3.5 text-[#DC2626]" />
             <span>CHAOS</span>
           </button>
+        </div>
+
+        {/* Live Microphone RMS Level & RX Packet Counters */}
+        <div className="px-3 py-1.5 bg-[#FFFFFF] border border-[#111111] text-[10px] space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[#767676] font-bold">
+              MIC RMS LEVEL: <span className={micRms > 0.015 ? 'text-[#008A4B] font-mono' : 'text-[#111111] font-mono'}>{micRms.toFixed(3)}</span>
+            </span>
+            <span className="text-[#767676] text-[9px] font-bold">
+              AUDIO CHUNKS RX: <span className="text-[#FF4F00] font-mono">{audioChunksRx}</span>
+            </span>
+          </div>
+          {/* Visual Meter Bar */}
+          <div className="w-full h-1.5 bg-[#E2E0D8] border border-[#111111] overflow-hidden">
+            <div
+              className={`h-full transition-all duration-75 ${
+                micRms > 0.03 ? 'bg-[#008A4B]' : micRms > 0.008 ? 'bg-[#FF4F00]' : 'bg-[#767676]'
+              }`}
+              style={{ width: `${Math.min(100, Math.round(micRms * 350))}%` }}
+            />
+          </div>
         </div>
 
         {/* Glowing 24kHz Duplex Connection Status */}
