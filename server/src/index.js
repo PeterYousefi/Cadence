@@ -33,8 +33,9 @@ app.use('/api', sessionRouter);
 // Fallback error handler
 app.use(errorHandler);
 
-// Start server
-if (process.env.NODE_ENV !== 'test') {
+// Start server if executed directly
+const isDirectRun = process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'));
+if (isDirectRun || process.env.RUN_STANDALONE === 'true') {
   app.listen(config.port, () => {
     console.log(`🚀 Cadence Backend listening on http://localhost:${config.port}`);
     console.log(`🔑 Boson API Key status: ${config.bosonApiKey ? 'Configured' : 'Missing (provide BOSON_API_KEY)'}`);
