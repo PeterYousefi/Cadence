@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import { PrincipalAvatar } from './PrincipalAvatar';
 import { PresetBar } from './PresetBar';
 import { AudioWaveform } from './AudioWaveform';
 import { 
@@ -12,16 +13,18 @@ import {
   Mic, 
   MicOff, 
   RefreshCw, 
-  Radio, 
+  Zap, 
+  DollarSign, 
   Terminal, 
+  AlertTriangle, 
   Bot, 
   User, 
   Wrench, 
-  ShieldAlert, 
-  ChevronRight,
-  Trash2,
-  Zap
+  Trash2, 
+  Flame,
+  ChevronRight
 } from 'lucide-react';
+import { calculateSessionEconomics } from '../../../../packages/audio-dsp/src/unitEconomics';
 
 interface TelemetryRailProps {
   wsStatus: WSStatus;
@@ -29,7 +32,9 @@ interface TelemetryRailProps {
   isRecording: boolean;
   isSpeaking: boolean;
   hasBargedIn: boolean;
+  bargeInDurationMs: number;
   latencyMs: number;
+  sessionDurationSec: number;
   micSource: AudioVisualizerSource | null;
   speakerSource: AudioVisualizerSource | null;
   logs: ActivityLogItem[];
@@ -38,6 +43,7 @@ interface TelemetryRailProps {
   onToggleConnection: () => void;
   onToggleMic: () => void;
   onSelectPreset: (preset: ArchitecturePreset) => void;
+  onInjectChaos: () => void;
 }
 
 export function TelemetryRail({
@@ -46,7 +52,9 @@ export function TelemetryRail({
   isRecording,
   isSpeaking,
   hasBargedIn,
+  bargeInDurationMs,
   latencyMs,
+  sessionDurationSec,
   micSource,
   speakerSource,
   logs,
@@ -54,7 +62,8 @@ export function TelemetryRail({
   onClearLogs,
   onToggleConnection,
   onToggleMic,
-  onSelectPreset
+  onSelectPreset,
+  onInjectChaos
 }: TelemetryRailProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -64,98 +73,113 @@ export function TelemetryRail({
     }
   }, [logs]);
 
+  // Real-time Unit Economics vs OpenAI
+  const economics = calculateSessionEconomics(
+    isRecording ? sessionDurationSec : Math.floor(sessionDurationSec * 0.6),
+    isSpeaking ? Math.floor(sessionDurationSec * 0.4) : 10
+  );
+
   return (
-    <aside className="w-[35%] min-w-[360px] max-w-[480px] h-full flex flex-col gap-3 p-4 bg-zinc-950/95 border-r border-zinc-800/90 select-none overflow-hidden z-20">
-      {/* 1. Quick-Launch Presets at the top */}
+    <aside className="w-[35%] min-w-[380px] max-w-[480px] h-full flex flex-col gap-2.5 p-3.5 bg-[#F4F3EF] border-r-2 border-[#111111] select-none overflow-hidden z-20 font-mono text-xs">
+      
+      {/* 1. Principal Architect Avatar (Higgs Avatar) */}
+      <PrincipalAvatar
+        isSpeaking={isSpeaking}
+        isDuplexActive={isConnected}
+        audioSource={speakerSource}
+      />
+
+      {/* 2. Top Quick-Launch Presets */}
       <PresetBar
         onSelectPreset={onSelectPreset}
         activePresetId={activePresetId}
       />
 
-      {/* 2. Glowing Connection Badge & Audio Controls */}
-      <div className="flex items-center gap-2">
-        <button
-          onClick={onToggleConnection}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-mono text-xs font-bold tracking-wider uppercase transition-all duration-300 ${
-            isConnected
-              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30'
-              : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.25)]'
-          }`}
-        >
-          {wsStatus === 'CONNECTING' ? (
-            <>
-              <RefreshCw className="w-4 h-4 animate-spin text-amber-400" />
-              <span>Connecting...</span>
-            </>
-          ) : isConnected ? (
-            <>
-              <Power className="w-4 h-4 text-rose-400" />
-              <span>Disconnect</span>
-            </>
-          ) : (
-            <>
-              <Power className="w-4 h-4 text-cyan-400" />
-              <span>Initialize Workstation</span>
-            </>
-          )}
-        </button>
+      {/* 3. Hardware Master Controls & 0.125s Barge-in Beacon */}
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onToggleConnection}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 border border-[#111111] text-xs font-bold uppercase tracking-wider shadow-cad active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all ${
+              isConnected
+                ? 'bg-[#111111] text-[#FFFFFF]'
+                : 'bg-[#FF4F00] text-[#FFFFFF] hover:bg-[#e04500]'
+            }`}
+          >
+            {wsStatus === 'CONNECTING' ? (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                <span>SYNCING...</span>
+              </>
+            ) : isConnected ? (
+              <>
+                <Power className="w-3.5 h-3.5 text-[#FF4F00]" />
+                <span>TERMINATE DUPLEX</span>
+              </>
+            ) : (
+              <>
+                <Power className="w-3.5 h-3.5" />
+                <span>INITIALIZE WORKSTATION</span>
+              </>
+            )}
+          </button>
 
-        <button
-          onClick={onToggleMic}
-          disabled={!isConnected}
-          className={`p-2.5 rounded-xl border font-mono transition-all duration-200 ${
-            !isConnected
-              ? 'bg-zinc-900 border-zinc-800 text-zinc-600 cursor-not-allowed'
-              : isRecording
-              ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
-              : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:text-white'
-          }`}
-          title={isRecording ? 'Mute Microphone' : 'Unmute Microphone'}
-        >
-          {isRecording ? <Mic className="w-4 h-4 text-emerald-400 animate-pulse" /> : <MicOff className="w-4 h-4 text-zinc-500" />}
-        </button>
-      </div>
+          <button
+            onClick={onToggleMic}
+            disabled={!isConnected}
+            className={`p-2 border border-[#111111] shadow-cad-sm active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all ${
+              !isConnected
+                ? 'bg-[#EBEAE5] text-[#767676] cursor-not-allowed'
+                : isRecording
+                ? 'bg-[#008A4B] text-[#FFFFFF]'
+                : 'bg-[#FFFFFF] text-[#111111]'
+            }`}
+            title={isRecording ? 'Mute Mic' : 'Unmute Mic'}
+          >
+            {isRecording ? <Mic className="w-4 h-4 animate-pulse" /> : <MicOff className="w-4 h-4 text-[#767676]" />}
+          </button>
 
-      {/* Glowing Connection Badge Banner */}
-      <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-zinc-900/60 border border-zinc-800 backdrop-blur-md font-mono text-xs shadow-inner">
-        <div className="flex items-center gap-2.5">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-              isConnected ? 'bg-emerald-400' : 'bg-zinc-600'
-            }`} />
-            <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
-              isConnected ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-zinc-700'
-            }`} />
-          </span>
-          <span className={`text-[11px] font-bold tracking-wider ${
-            isConnected ? 'text-emerald-400' : 'text-zinc-500'
-          }`}>
-            {isConnected ? 'CONNECTED // 24kHz DUPLEX' : 'OFFLINE // STANDBY'}
-          </span>
+          {/* Quick Chaos Inject Button */}
+          <button
+            onClick={onInjectChaos}
+            disabled={!isConnected}
+            className={`flex items-center gap-1 py-2 px-2.5 border border-[#111111] text-[10px] font-bold uppercase tracking-wider transition-all ${
+              !isConnected
+                ? 'bg-[#EBEAE5] text-[#767676] cursor-not-allowed'
+                : 'bg-[#FFFFFF] hover:bg-[#FEE2E2] text-[#DC2626] shadow-cad-sm active:translate-x-[1px] active:translate-y-[1px] active:shadow-none'
+            }`}
+            title="Inject Chaos Failure (Kill Redis Cluster)"
+          >
+            <Flame className="w-3.5 h-3.5 text-[#DC2626]" />
+            <span>CHAOS</span>
+          </button>
         </div>
 
-        <div className="flex items-center gap-1.5 text-zinc-400 text-[11px]">
-          <Zap className="w-3 h-3 text-amber-400" />
-          <span>{isConnected ? `${latencyMs}ms` : '--'}</span>
-        </div>
-      </div>
-
-      {/* Barge-in Glowing Banner */}
-      {hasBargedIn && (
-        <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-rose-500/15 border border-rose-500 text-rose-300 shadow-[0_0_15px_rgba(244,63,94,0.4)] animate-bounce font-mono text-xs">
+        {/* Glowing 24kHz Duplex Connection Status */}
+        <div className="flex items-center justify-between px-3 py-1.5 bg-[#FFFFFF] border border-[#111111] text-[10px]">
           <div className="flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4 text-rose-400 animate-spin" />
-            <span className="font-bold tracking-wider uppercase text-[11px]">
-              Barged-In // Playback Flushed
+            <span className={`w-2.5 h-2.5 ${isConnected ? 'bg-[#008A4B] animate-pulse' : 'bg-[#767676]'}`} />
+            <span className="font-bold tracking-wider">
+              {isConnected ? 'CONNECTED // 24kHz DUPLEX' : 'STANDBY // DISCONNECTED'}
             </span>
           </div>
-          <span className="text-[9px] bg-rose-500/30 text-rose-100 px-2 py-0.5 rounded font-bold uppercase">
-            Zero-Lag Resync
-          </span>
-        </div>
-      )}
 
-      {/* 3. Real-Time Pulsing Oscilloscope */}
+          <div className="flex items-center gap-1.5 text-[#767676]">
+            <Zap className="w-3 h-3 text-[#FF4F00]" />
+            <span>{isConnected ? `${latencyMs}ms RTT` : '--'}</span>
+          </div>
+        </div>
+
+        {/* 0.125s Interruption Indicator */}
+        {hasBargedIn && (
+          <div className="flex items-center justify-between px-3 py-1.5 bg-[#FF4F00] text-[#FFFFFF] border border-[#111111] shadow-cad animate-bounce font-bold text-[10px] uppercase tracking-wider">
+            <span>[BARGE-IN DETECTED // STOPPED IN {(bargeInDurationMs / 1000).toFixed(2)}s]</span>
+            <span className="bg-[#FFFFFF] text-[#FF4F00] px-1.5 py-0.2">TARGET &lt; 0.125s</span>
+          </div>
+        )}
+      </div>
+
+      {/* 4. Real-Time 24kHz Oscilloscope */}
       <AudioWaveform
         micSource={micSource}
         speakerSource={speakerSource}
@@ -163,106 +187,108 @@ export function TelemetryRail({
         isSpeaking={isSpeaking}
       />
 
-      {/* 4. Scrolling Live Transcript Stream with Syntax-Highlighted Tool Cards */}
-      <div className="flex-1 flex flex-col min-h-0 rounded-2xl bg-zinc-900/60 border border-zinc-800 backdrop-blur-md overflow-hidden shadow-xl">
+      {/* 5. Live Unit Economics Ticker (Boson vs OpenAI) */}
+      <div className="p-2.5 bg-[#FFFFFF] border border-[#111111] shadow-cad-sm text-[10px]">
+        <div className="flex items-center justify-between border-b border-[#111111] pb-1 mb-1.5">
+          <span className="font-bold uppercase tracking-wider flex items-center gap-1">
+            <DollarSign className="w-3 h-3 text-[#008A4B]" />
+            Session Unit Economics
+          </span>
+          <span className="bg-[#E8F5EE] border border-[#008A4B] text-[#008A4B] font-bold px-1.5 py-0.2 text-[9px]">
+            {economics.savingsPercentage}% SAVED VS OPENAI
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <span className="text-[#767676] block text-[9px]">Boson Session Cost:</span>
+            <span className="font-bold text-xs text-[#008A4B]">${economics.bosonCostUSD.toFixed(4)}</span>
+          </div>
+          <div>
+            <span className="text-[#767676] block text-[9px]">OpenAI Realtime Equivalent:</span>
+            <span className="font-bold text-xs line-through text-[#767676]">${economics.openaiCostUSD.toFixed(4)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 6. Scrolling Live Transcript Stream with Syntax-Highlighted Tool Cards */}
+      <div className="flex-1 flex flex-col min-h-0 bg-[#FFFFFF] border border-[#111111] shadow-cad overflow-hidden">
         {/* Transcript Header */}
-        <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-zinc-800/80 bg-zinc-950/40">
-          <div className="flex items-center gap-2">
-            <Terminal className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="text-xs font-mono font-medium tracking-wide text-zinc-300 uppercase">
-              Live Transcript & Tool Stream
-            </span>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-400">
-              {logs.length}
-            </span>
+        <div className="flex items-center justify-between px-3 py-1.5 border-b border-[#111111] bg-[#F4F3EF]">
+          <div className="flex items-center gap-1.5 font-bold uppercase text-[10px]">
+            <Terminal className="w-3 h-3 text-[#FF4F00]" />
+            <span>[03 // REAL-TIME TRANSCRIPT & TOOL STREAM]</span>
           </div>
           {logs.length > 0 && (
             <button
               onClick={onClearLogs}
-              className="text-zinc-500 hover:text-zinc-300 p-1 rounded transition-colors text-xs flex items-center gap-1"
-              title="Clear Transcript"
+              className="p-1 hover:bg-[#FFFFFF] border border-[#111111] transition-colors"
+              title="Clear Log"
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="w-3 h-3 text-[#767676]" />
             </button>
           )}
         </div>
 
-        {/* Scrollable Transcript Feed */}
+        {/* Scrollable Feed */}
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto p-3 space-y-2.5 font-mono text-xs select-text"
+          className="flex-1 overflow-y-auto p-2.5 space-y-2 select-text"
         >
           {logs.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center text-zinc-600 space-y-2 p-4">
-              <Bot className="w-8 h-8 text-zinc-700 animate-pulse" />
-              <p className="text-xs max-w-[240px]">
-                Connect the engine and speak into your microphone, or choose a preset to begin designing.
+            <div className="h-full flex flex-col items-center justify-center text-center text-[#767676] p-4 space-y-1">
+              <Bot className="w-6 h-6 animate-pulse" />
+              <p className="text-[10px]">
+                Workstation ready. Converse in any of 100+ languages or seed presets.
               </p>
             </div>
           ) : (
             logs.map((item) => (
               <div
                 key={item.id}
-                className={`p-3 rounded-xl border text-xs leading-relaxed transition-all backdrop-blur-sm ${
+                className={`p-2 border border-[#111111] leading-relaxed text-[11px] ${
                   item.role === 'user'
-                    ? 'bg-cyan-950/30 border-cyan-500/40 text-cyan-100 shadow-[0_0_10px_rgba(6,182,212,0.1)]'
+                    ? 'bg-[#F4F3EF] border-l-4 border-l-[#111111]'
                     : item.role === 'cadence'
-                    ? 'bg-violet-950/30 border-violet-500/40 text-violet-100 shadow-[0_0_10px_rgba(139,92,246,0.1)]'
+                    ? 'bg-[#FFFFFF] border-l-4 border-l-[#008A4B]'
                     : item.role === 'tool'
-                    ? 'bg-pink-950/30 border-pink-500/40 text-pink-100 shadow-[0_0_10px_rgba(236,72,153,0.1)]'
-                    : 'bg-zinc-900/60 border-zinc-800 text-zinc-300'
+                    ? 'bg-[#FFF0EA] border-l-4 border-l-[#FF4F00]'
+                    : 'bg-[#F4F3EF]'
                 }`}
               >
-                {/* Message Header */}
-                <div className="flex items-center justify-between mb-1.5 text-[10px] text-zinc-400 opacity-90">
-                  <div className="flex items-center gap-1.5 font-semibold">
-                    {item.role === 'user' && (
-                      <>
-                        <User className="w-3.5 h-3.5 text-cyan-400" />
-                        <span className="text-cyan-400 font-bold">USER</span>
-                      </>
-                    )}
-                    {item.role === 'cadence' && (
-                      <>
-                        <Bot className="w-3.5 h-3.5 text-violet-400" />
-                        <span className="text-violet-400 font-bold">CADENCE</span>
-                      </>
-                    )}
-                    {item.role === 'tool' && (
-                      <>
-                        <Wrench className="w-3.5 h-3.5 text-pink-400" />
-                        <span className="text-pink-400 font-bold">TOOL // {item.toolName}</span>
-                      </>
-                    )}
+                {/* Header */}
+                <div className="flex items-center justify-between text-[9px] font-bold text-[#767676] mb-1">
+                  <div className="flex items-center gap-1">
+                    {item.role === 'user' && <User className="w-3 h-3 text-[#111111]" />}
+                    {item.role === 'cadence' && <Bot className="w-3 h-3 text-[#008A4B]" />}
+                    {item.role === 'tool' && <Wrench className="w-3 h-3 text-[#FF4F00]" />}
+                    <span className="uppercase">{item.role === 'tool' ? `TOOL // ${item.toolName}` : item.role}</span>
                   </div>
-                  <span className="text-zinc-500">{item.time}</span>
+                  <span>{item.time}</span>
                 </div>
 
-                {/* Message Content */}
+                {/* Content */}
                 {item.role === 'tool' ? (
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     {item.summary && (
-                      <p className="text-zinc-200 text-xs font-sans italic">
-                        "{item.summary}"
-                      </p>
+                      <p className="font-bold text-[#111111]">{item.summary}</p>
                     )}
                     {item.highlighted_component && (
-                      <div className="text-[10px] text-pink-300 font-mono">
-                        Target Node: <span className="underline font-bold text-pink-200">{item.highlighted_component}</span>
+                      <div className="text-[10px] text-[#FF4F00] font-bold">
+                        TARGET NODE: {item.highlighted_component}
                       </div>
                     )}
-                    <details className="mt-1 bg-zinc-950/80 rounded-lg p-2 border border-zinc-800/80">
-                      <summary className="cursor-pointer text-[10px] text-zinc-400 flex items-center gap-1 hover:text-zinc-200">
+                    <details className="mt-1 bg-[#FFFFFF] border border-[#111111] p-1.5 text-[9px]">
+                      <summary className="cursor-pointer text-[#767676] hover:text-[#111111] flex items-center gap-1 font-bold">
                         <ChevronRight className="w-3 h-3" />
-                        Syntax-Highlighted Mermaid Payload
+                        Tool Payload / Manifest Spec
                       </summary>
-                      <pre className="mt-2 text-[10px] text-zinc-300 overflow-x-auto p-2 bg-zinc-900/90 rounded border border-zinc-800 font-mono">
+                      <pre className="mt-1.5 p-1.5 bg-[#F4F3EF] border border-[#111111] overflow-x-auto text-[9px]">
                         {item.mermaid_code || JSON.stringify(item.payload, null, 2)}
                       </pre>
                     </details>
                   </div>
                 ) : (
-                  <div className="font-sans text-xs whitespace-pre-wrap leading-relaxed">{item.text}</div>
+                  <div className="whitespace-pre-wrap">{item.text}</div>
                 )}
               </div>
             ))
