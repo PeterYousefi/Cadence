@@ -1,0 +1,11 @@
+{
+  "name": "@cadence/schema-engine",
+  "version": "1.0.0",
+  "description": "Mermaid AST sanitizer, Terraform/IaC generator, and cloud cost/latency estimator for Cadence",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {}
+}
