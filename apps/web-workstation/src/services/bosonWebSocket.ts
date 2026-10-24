@@ -5,7 +5,9 @@ export interface BosonWebSocketCallbacks {
   onOpen?: (event: Event) => void;
   onClose?: (event: CloseEvent) => void;
   onError?: (event: Event) => void;
+  onErrorEvent?: (errorMessage: string) => void;
   onAudioDelta?: (delta: string) => void;
+  onAudioChunksCount?: (count: number) => void;
   onSpeechStarted?: () => void;
   onSpeechStopped?: () => void;
   onUserTranscript?: (transcript: string) => void;
@@ -25,6 +27,7 @@ export class BosonWebSocketClient {
   private ws: WebSocket | null = null;
   private callbacks: Required<BosonWebSocketCallbacks>;
   public isConnected: boolean = false;
+  public audioChunksReceived: number = 0;
 
   constructor(options: BosonWebSocketOptions = {}) {
     this.token = options.token || null;
@@ -33,7 +36,9 @@ export class BosonWebSocketClient {
       onOpen: options.onOpen || (() => {}),
       onClose: options.onClose || (() => {}),
       onError: options.onError || (() => {}),
+      onErrorEvent: options.onErrorEvent || (() => {}),
       onAudioDelta: options.onAudioDelta || (() => {}),
+      onAudioChunksCount: options.onAudioChunksCount || (() => {}),
       onSpeechStarted: options.onSpeechStarted || (() => {}),
       onSpeechStopped: options.onSpeechStopped || (() => {}),
       onUserTranscript: options.onUserTranscript || (() => {}),
@@ -53,8 +58,13 @@ export class BosonWebSocketClient {
       throw new Error('Ephemeral client secret token is required to establish WebSocket connection.');
     }
 
+    if (!this.token.startsWith('bai-eph-')) {
+      throw new Error(`Invalid Boson ephemeral token format (expected 'bai-eph-...', got '${this.token.slice(0, 10)}...')`);
+    }
+
+    this.audioChunksReceived = 0;
     const subprotocols = ['realtime', `bai-client-secret.${this.token}`];
-    console.log(`[Cadence WS] Connecting to ${this.wsUrl} with subprotocol bai-client-secret.***`);
+    console.log(`[Cadence WS] Establishing WebSocket to ${this.wsUrl} with subprotocol bai-client-secret.***`);
 
     this.ws = new WebSocket(this.wsUrl, subprotocols);
 
@@ -70,7 +80,7 @@ export class BosonWebSocketClient {
     };
 
     this.ws.onerror = (event: Event) => {
-      console.error('[Cadence WS] WebSocket error:', event);
+      console.error('[Cadence WS] WebSocket transport error:', event);
       this.callbacks.onError(event);
     };
 
@@ -85,23 +95,28 @@ export class BosonWebSocketClient {
     const sessionPayload = {
       type: 'session.update',
       session: {
+        modalities: ['text', 'audio'],
         model: BOSON_CONFIG.REALTIME_MODEL,
         voice: BOSON_CONFIG.VOICE,
-        instructions: SYSTEM_INSTRUCTIONS,
+        input_audio_format: 'pcm16',
+        output_audio_format: 'pcm16',
         input_audio_transcription: {
           model: BOSON_CONFIG.STT_MODEL
         },
         turn_detection: {
           type: 'server_vad',
-          threshold: BOSON_CONFIG.VAD_THRESHOLD,
-          silence_duration_ms: BOSON_CONFIG.VAD_SILENCE_MS
+          threshold: 0.4,
+          prefix_padding_ms: 300,
+          silence_duration_ms: 350
         },
+        tool_choice: 'auto',
+        instructions: SYSTEM_INSTRUCTIONS,
         tools: REALTIME_TOOLS
       }
     };
 
     this.send(sessionPayload);
-    console.log('[Cadence WS] Dispatched session.update configuration with 3 native tools');
+    console.log('[Cadence WS] Dispatched session.update (modalities: text+audio, pcm16, server_vad 0.4)');
   }
 
   public appendAudioBuffer(base64Chunk: string): void {
@@ -109,6 +124,31 @@ export class BosonWebSocketClient {
     this.send({
       type: 'input_audio_buffer.append',
       audio: base64Chunk
+    });
+  }
+
+  public commitTurnAndForceReply(): void {
+    console.log('[Cadence WS] Force commit turn triggered');
+    this.send({
+      type: 'input_audio_buffer.commit'
+    });
+    this.send({
+      type: 'response.create'
+    });
+  }
+
+  public sendUserTextMessage(text: string): void {
+    console.log('[Cadence WS] Sending user text message:', text);
+    this.send({
+      type: 'conversation.item.create',
+      item: {
+        type: 'message',
+        role: 'user',
+        content: [{ type: 'input_text', text }]
+      }
+    });
+    this.send({
+      type: 'response.create'
     });
   }
 
@@ -122,25 +162,43 @@ export class BosonWebSocketClient {
 
     this.callbacks.onRawEvent(data);
 
-    switch (data.type) {
-      case 'response.output_audio.delta':
-        if (data.delta) {
-          this.callbacks.onAudioDelta(data.delta);
-        }
-        break;
+    // Audio delta packet handling (both response.output_audio.delta and response.audio.delta)
+    if (data.type === 'response.output_audio.delta' || data.type === 'response.audio.delta') {
+      this.audioChunksReceived++;
+      this.callbacks.onAudioChunksCount(this.audioChunksReceived);
+      const audioChunk = data.delta || data.audio;
+      if (audioChunk) {
+        this.callbacks.onAudioDelta(audioChunk);
+      }
+      return;
+    }
 
+    // Print non-audio events to console for live packet tracing
+    console.log(`[Cadence WS Packet: ${data.type}]`, data);
+
+    switch (data.type) {
+      // Audio transcript streaming
       case 'response.audio_transcript.delta':
-        if (data.delta) {
-          this.callbacks.onAgentTranscript(data.delta, false);
+      case 'response.output_audio_transcript.delta':
+      case 'response.text.delta': {
+        const delta = data.delta || data.text;
+        if (delta) {
+          this.callbacks.onAgentTranscript(delta, false);
         }
         break;
+      }
 
       case 'response.audio_transcript.done':
-        if (data.transcript) {
-          this.callbacks.onAgentTranscript(data.transcript, true);
+      case 'response.output_audio_transcript.done':
+      case 'response.text.done': {
+        const text = data.transcript || data.text;
+        if (text) {
+          this.callbacks.onAgentTranscript(text, true);
         }
         break;
+      }
 
+      // VAD Interruption Barge-in triggers
       case 'input_audio_buffer.speech_started':
         console.log('[Cadence WS] VAD speech_started -> trigger 0.125s barge-in flush');
         this.callbacks.onSpeechStarted();
@@ -150,15 +208,52 @@ export class BosonWebSocketClient {
         this.callbacks.onSpeechStopped();
         break;
 
-      case 'conversation.item.input_audio_transcription.completed':
-        if (data.transcript) {
-          this.callbacks.onUserTranscript(data.transcript);
+      // User STT completed
+      case 'conversation.item.input_audio_transcription.completed': {
+        const userText = data.transcript || data.item?.content?.[0]?.transcript;
+        if (userText) {
+          this.callbacks.onUserTranscript(userText);
         }
         break;
+      }
 
+      // Tool call arriving in function_call_arguments.done
+      case 'response.function_call_arguments.done': {
+        const callId = data.call_id;
+        const toolName = data.name;
+        let parsedArgs: any = {};
+        try {
+          parsedArgs = typeof data.arguments === 'string' ? JSON.parse(data.arguments) : (data.arguments || {});
+        } catch (e) {
+          console.error('[Cadence WS] Error parsing tool arguments:', e);
+          parsedArgs = { raw: data.arguments };
+        }
+        console.log(`[Cadence WS] Executing tool call via function_call_arguments.done: ${toolName}`, parsedArgs);
+        this.callbacks.onToolCall({
+          callId,
+          toolName,
+          ...parsedArgs
+        });
+        this.sendToolResponse(callId, {
+          status: 'success',
+          tool: toolName,
+          executed_at: new Date().toISOString()
+        });
+        break;
+      }
+
+      // Tool call arriving inside response.done
       case 'response.done':
         this.handleResponseDone(data);
         break;
+
+      // Remote error notification
+      case 'error': {
+        const errMsg = data.error?.message || data.message || JSON.stringify(data.error);
+        console.error('[Cadence WS Remote Error]:', errMsg);
+        this.callbacks.onErrorEvent(errMsg);
+        break;
+      }
 
       default:
         break;
@@ -174,13 +269,13 @@ export class BosonWebSocketClient {
         let parsedArgs: any = {};
 
         try {
-          parsedArgs = typeof item.arguments === 'string' ? JSON.parse(item.arguments) : item.arguments;
+          parsedArgs = typeof item.arguments === 'string' ? JSON.parse(item.arguments) : (item.arguments || {});
         } catch (e) {
           console.error('[Cadence WS] Failed parsing tool arguments:', e);
           parsedArgs = { raw: item.arguments };
         }
 
-        console.log(`[Cadence WS] Executing ${toolName} tool call:`, parsedArgs);
+        console.log(`[Cadence WS] Executing ${toolName} tool call via response.done:`, parsedArgs);
         this.callbacks.onToolCall({
           callId,
           toolName,
