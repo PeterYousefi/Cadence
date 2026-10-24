@@ -2,16 +2,32 @@
 
 # CADENCE
 ### Autonomous Real-Time Voice Life & Event Planner
+**Full-Duplex 24kHz Audio &bull; Vector Cybernetic Kinematics &bull; Dynamic Vector CAD Mind-Maps**
+
+<br />
+
+<p align="center">
+  <a href="https://cadence-ai.azurewebsites.net" target="_blank">
+    <img src="https://img.shields.io/badge/LIVE%20WORKSTATION-cadence--ai.azurewebsites.net-FF4F00?style=for-the-badge&logo=microsoftazure&logoColor=white" alt="Live Workstation on Azure" height="38" />
+  </a>
+</p>
+
+<p align="center">
+  <strong>🌐 Production Deployment:</strong> <a href="https://cadence-ai.azurewebsites.net">https://cadence-ai.azurewebsites.net</a>
+  &nbsp;&bull;&nbsp;
+  <strong>⚡ Instant Shortlink:</strong> <a href="https://tinyurl.com/2dxcecgo">https://tinyurl.com/2dxcecgo</a>
+</p>
 
 [![Build & Test](https://github.com/PeterYousefi/Cadence/actions/workflows/ci.yml/badge.svg)](https://github.com/PeterYousefi/Cadence/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-green.svg)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20.0.0-green.svg)](https://nodejs.org/)
 [![Audio DSP](https://img.shields.io/badge/Audio%20DSP-24kHz%20PCM16-FF4F00.svg)](#audio-pipeline)
-[![Multi-Model](https://img.shields.io/badge/Boson%20AI-Realtime%20%2B%20Avatar%20%2B%20TTS%203-008A4B.svg)](https://boson.ai)
+[![Multi-Model](https://img.shields.io/badge/Boson%20AI-Realtime%20%2B%20Kinematic%20%2B%20TTS%203-008A4B.svg)](https://boson.ai)
+[![Azure Cloud](https://img.shields.io/badge/Hosted%20on-Azure%20App%20Service%20(Linux)-0078D4.svg)](https://azure.microsoft.com/)
 
 <p align="center">
-  <strong>Cadence</strong> pairs Boson AI's multi-model suite with a reactive, Swiss CAD visual mind-mapping canvas. Speak naturally in any language to plan dream vacations, coordinate weddings, build startup roadmaps, or brainstorm life goals with instant visual timelines and sub-second full-duplex voice.
+  <strong>Cadence</strong> combines Boson AI's real-time multimodal intelligence with a precision Swiss CAD drafting deck. Speak naturally in 100+ languages to plan dream vacations, coordinate weddings, build startup roadmaps, or evaluate life milestones with sub-second full-duplex voice, 0.125s barge-in interruption, dynamic vector mind-maps, and an audio-reactive 60 FPS cybernetic robot face.
 </p>
 
 </div>
@@ -28,12 +44,32 @@
 
 The Cadence workstation is engineered with a **Teenage Engineering × Swiss Industrial Drafting** aesthetic—combining warm alabaster paper tones (`#F4F3EF`), exposed 24px structural blueprint grids (`#E2E0D8`), international signal accents (`#FF4F00` and `#008A4B`), and mechanical tactile controls with physical drop-shadows:
 
-* **Left 35% // Telemetry Rail:** Houses the 5-Avatar Persona Selector (Chloe, Marcus, Oliver, Emma, Liam) with live talking-head video viewport, dual 24kHz mic/speaker oscilloscopes, live numeric microphone RMS meter, 0.125s barge-in timeline beacon, real-time Boson vs. OpenAI unit economics ticker, and the syntax-highlighted live transcript and tool stream.
+* **Left 35% // Telemetry Rail:** Houses the **Neural Synthesis Interface** (Vector Cybernetic Robot Face with real-time kinematic mouth morphing and audio-frequency lip-sync), dual 24kHz mic/speaker oscilloscopes, live numeric microphone RMS meter, 0.125s barge-in timeline beacon, real-time Boson vs. OpenAI unit economics ticker, and the syntax-highlighted live transcript and tool stream.
 * **Right 65% // Visual Mind-Map Canvas:** Full-height, reactive vector CAD viewport pre-calibrated to a **220% default zoom** scale focused on central milestones, rendering vibrant pastel flowchart mind-maps with smooth pan/zoom controls, contingency simulations, and a direct text/voice command bar.
 
 ---
 
-## ⚡ Key Capabilities
+## 🤖 Neural Synthesis Interface — Vector Cybernetic Face
+
+<div align="center">
+  <img src="docs/images/cadence-cybernetic-face.png" alt="Cadence Neural Synthesis Interface - Kinematic Node" width="60%" style="border: 2px solid #111111; box-shadow: 4px 4px 0px #111111;" />
+</div>
+
+<br />
+
+The avatar viewport features an interactive **Vector Cybernetic Robot Face** with hardware-level telemetry:
+- **Chiseled Carbon & Alabaster Geometry:** High-contrast carbon black (`#111111`) chassis with warm alabaster faceplate, acoustic cheek grills, lateral telemetry fins, and hydraulic collar pistons.
+- **Glowing Ocular Visor:** Active audio scanlines and dual ocular frequency equalizer bars that shift colors to match the active persona:
+  - `[MARCUS // ARCHITECT]` — Signal Orange (`#FF4F00`)
+  - `[CHLOE // UX]` — Emerald Green (`#008A4B`)
+  - `[OLIVER // BACKEND]` — Industrial Amber (`#D97706`)
+  - `[SOPHIA // DATA]` — Cobalt Blue (`#2563EB`)
+  - `[LIAM // DEVOPS]` — Deep Violet (`#7C3AED`)
+- **Real-Time Kinematic Lip-Sync:** Connected directly to the browser `AudioContext` analyser node. When Boson AI speaks, the SVG vector mouth dynamically curves and oscillates into speech apertures with internal neon vocal blades that jump in response to live FFT voice frequency bins. Returns smoothly to a resting 2px slit when silent.
+
+---
+
+## ⚡ Core Capabilities
 
 ### 1. Sub-Second Full-Duplex Voice & 0.125s Barge-In
 - **24kHz Signed 16-bit PCM Pipeline:** Bidirectional audio streaming over a direct browser WebSocket into `wss://api.boson.ai/v1/realtime`.
@@ -41,10 +77,10 @@ The Cadence workstation is engineered with a **Teenage Engineering × Swiss Indu
 - **100+ Language Zero-Flag Code-Switching:** Natively switch mid-sentence across English, Mandarin, Spanish, French, Japanese, German, Hindi, and Arabic without session restarts.
 - **Unit Economics Engine:** Live tracking of session audio costs at Boson's pricing ($0.0023/min input, $0.014/min output), delivering an **88–92% cost reduction** compared to legacy realtime speech APIs.
 
-### 2. Conversational Architecture & Mid-Turn Tool Calling
-When analyzing or altering system designs, Cadence calls native tools mid-conversation:
-- `render_architecture`: Generates or patches valid Mermaid.js graph topologies, illuminates active nodes in Signal Orange (`#FF4F00`), and computes capacity metrics.
-- `inject_chaos_failure`: Injects infrastructure partition, latency spikes, or crashes; recalculates downstream blast radius; and styles severed edges in crimson dashed strokes.
+### 2. Conversational Mind-Mapping & Mid-Turn Tool Calling
+When analyzing or altering plans, Cadence calls native tools mid-conversation:
+- `render_mindmap` / `render_architecture`: Generates or patches valid Mermaid.js graph topologies, illuminates active milestones in Signal Orange (`#FF4F00`), and recalibrates the canvas.
+- `inject_chaos_failure`: Injects real-world contingencies (e.g. rain contingency on wedding day, missed flight connection, cache partition) and styles severed edges in dashed crimson strokes.
 - `generate_iac_manifest`: Synthesizes production-ready Terraform HCL and Docker Compose definitions for immediate provisioning.
 
 ---
@@ -56,8 +92,8 @@ Cadence orchestrates three distinct Boson AI models into a unified engineering w
 | Model | Role | Integration Point |
 |---|---|---|
 | **Higgs Realtime** (`higgs-realtime`) | Full-duplex conversational reasoning, STT, and sub-second tool execution | Direct browser WebSocket (`/v1/realtime`) |
-| **Higgs Avatar** (`higgs-avatar`) | Principal Architect talking-head persona with zero-shot custom portrait upload | Streaming video session & 60fps Web Audio lip-sync |
-| **Higgs TTS 3** (`higgs-tts-3`) | Expressive post-mortem narrator with inline emotion and sound effect tags | Synced word-level microsecond teleprompter |
+| **Higgs Kinematics** (`higgs-avatar`) | Neural Synthesis robot interface with 60 FPS Web Audio frequency lip-sync | Reactive SVG kinematic loop & WebAudio analyser |
+| **Higgs TTS 3** (`higgs-tts-3`) | Expressive incident narrator with inline emotion and sound effect tags | Synced word-level microsecond teleprompter |
 
 ```mermaid
 graph TD
@@ -66,11 +102,11 @@ graph TD
     AudioDSP --> BrowserSocket["Browser WebSocket Client"]
     BrowserSocket --> AudioPlayer["Web Audio Gapless Engine"]
     AudioPlayer --> Speakers["Voice Output"]
-    AvatarViewport["Principal Architect Avatar Viewport"]
+    KinematicFace["Neural Synthesis Kinematic Node"]
     CADCanvas["Reactive CAD Blueprint Canvas"]
   end
 
-  subgraph Gateway ["Cadence API Gateway (Express - Port 3001)"]
+  subgraph Gateway ["Cadence API Gateway (Azure App Service - Port 8080/3001)"]
     TokenRoute["POST /api/session"] --> BosonSecrets["Boson client_secrets API"]
     TTSRoute["POST /api/tts-briefing"] --> BosonTTS["Boson /v1/audio/speech API"]
     AvatarRoute["POST /api/avatar-speak"] --> BosonAvatar["Boson /v1/videos API"]
@@ -79,13 +115,13 @@ graph TD
   subgraph BosonCloud ["Boson AI Cloud Engine"]
     BrowserSocket <== "Duplex WebSocket (bai-client-secret)" ==> HiggsRealtime["higgs-realtime (Conversational Core)"]
     HiggsRealtime --> STT["higgs-stt-3.1"]
-    HiggsRealtime --> ToolDispatcher["Tool Dispatcher (render, chaos, iac)"]
+    HiggsRealtime --> ToolDispatcher["Tool Dispatcher (mindmap, chaos, iac)"]
     BosonAvatar --> HiggsAvatarModel["higgs-avatar (Video Stream)"]
     BosonTTS --> HiggsTTS3Model["higgs-tts-3 (Inline Control Tags)"]
   end
 
   ToolDispatcher ==> CADCanvas
-  HiggsAvatarModel -.-> AvatarViewport
+  AudioPlayer -.-> KinematicFace
   HiggsTTS3Model -.-> Client
 
   style HiggsRealtime fill:#FF4F00,stroke:#111111,stroke-width:2px,color:#fff
@@ -128,8 +164,8 @@ Every schematic rendered on the canvas can be exported immediately to production
 │   ├── schema-engine/              # Mermaid AST sanitizer, Terraform generator, Cost/Latency estimator
 │   └── audio-dsp/                  # 24kHz PCM16 codecs, 0.125s VAD timer, unit economics tracker
 ├── apps/
-│   ├── api-gateway/                # Node.js Express server on port 3001 (Token minting & proxy routes)
-│   └── web-workstation/            # React + TypeScript + Tailwind CAD workstation on port 5173
+│   ├── api-gateway/                # Node.js Express server (Token minting & static production serving)
+│   └── web-workstation/            # React + TypeScript + Tailwind CAD workstation
 ├── tests/                          # Automated Vitest integration test suite (8 tests)
 ├── docs/images/                    # High-resolution retina workstation screenshots
 └── scripts/                        # Automation & headless screenshot capture tooling
@@ -139,13 +175,10 @@ Every schematic rendered on the canvas can be exported immediately to production
 
 ## 🚀 Quickstart Guide
 
-### Prerequisites
-- **Node.js** >= 18.0.0
-- **npm** >= 9.0.0
-- **Boson AI API Key** (`bai-...`)
+### Option 1: Live Azure Deployment
+Open **[https://cadence-ai.azurewebsites.net](https://cadence-ai.azurewebsites.net)** or **[https://tinyurl.com/2dxcecgo](https://tinyurl.com/2dxcecgo)** directly in any modern browser.
 
-### Installation & Launch
-
+### Option 2: Local Development
 ```bash
 # 1. Clone repository
 git clone https://github.com/PeterYousefi/Cadence.git
