@@ -1,4 +1,4 @@
-import { BOSON_CONFIG, SYSTEM_INSTRUCTIONS } from '../constants/cadence';
+import { BOSON_CONFIG, SYSTEM_INSTRUCTIONS, REALTIME_TOOLS } from '../constants/cadence';
 import { ToolCallData } from '../types/cadence';
 
 export interface BosonWebSocketCallbacks {
@@ -85,7 +85,7 @@ export class BosonWebSocketClient {
     const sessionPayload = {
       type: 'session.update',
       session: {
-        model: BOSON_CONFIG.MODEL,
+        model: BOSON_CONFIG.REALTIME_MODEL,
         voice: BOSON_CONFIG.VOICE,
         instructions: SYSTEM_INSTRUCTIONS,
         input_audio_transcription: {
@@ -96,36 +96,12 @@ export class BosonWebSocketClient {
           threshold: BOSON_CONFIG.VAD_THRESHOLD,
           silence_duration_ms: BOSON_CONFIG.VAD_SILENCE_MS
         },
-        tools: [
-          {
-            type: 'function',
-            name: 'render_architecture',
-            description: 'Renders or updates an interactive Mermaid system architecture diagram.',
-            parameters: {
-              type: 'object',
-              properties: {
-                mermaid_code: {
-                  type: 'string',
-                  description: 'Complete Mermaid graph TD string.'
-                },
-                summary: {
-                  type: 'string',
-                  description: 'Short 1-sentence spoken explanation of the change.'
-                },
-                highlighted_component: {
-                  type: 'string',
-                  description: 'ID of node being modified or added.'
-                }
-              },
-              required: ['mermaid_code']
-            }
-          }
-        ]
+        tools: REALTIME_TOOLS
       }
     };
 
     this.send(sessionPayload);
-    console.log('[Cadence WS] Dispatched session.update configuration');
+    console.log('[Cadence WS] Dispatched session.update configuration with 3 native tools');
   }
 
   public appendAudioBuffer(base64Chunk: string): void {
@@ -166,7 +142,7 @@ export class BosonWebSocketClient {
         break;
 
       case 'input_audio_buffer.speech_started':
-        console.log('[Cadence WS] VAD speech_started -> trigger barge-in flush');
+        console.log('[Cadence WS] VAD speech_started -> trigger 0.125s barge-in flush');
         this.callbacks.onSpeechStarted();
         break;
 
@@ -192,26 +168,30 @@ export class BosonWebSocketClient {
   private handleResponseDone(data: any): void {
     const outputItems = data.response?.output || [];
     for (const item of outputItems) {
-      if (item.type === 'function_call' && item.name === 'render_architecture') {
+      if (item.type === 'function_call') {
         const callId = item.call_id;
+        const toolName = item.name;
         let parsedArgs: any = {};
+
         try {
           parsedArgs = typeof item.arguments === 'string' ? JSON.parse(item.arguments) : item.arguments;
         } catch (e) {
           console.error('[Cadence WS] Failed parsing tool arguments:', e);
-          parsedArgs = { mermaid_code: item.arguments };
+          parsedArgs = { raw: item.arguments };
         }
 
-        console.log('[Cadence WS] Executing render_architecture tool call:', parsedArgs);
+        console.log(`[Cadence WS] Executing ${toolName} tool call:`, parsedArgs);
         this.callbacks.onToolCall({
           callId,
+          toolName,
           ...parsedArgs
         });
 
-        // Send tool output handshake back to socket
+        // Send tool handshake response back to socket
         this.sendToolResponse(callId, {
           status: 'success',
-          diagram_updated: true
+          tool: toolName,
+          executed_at: new Date().toISOString()
         });
       }
     }
