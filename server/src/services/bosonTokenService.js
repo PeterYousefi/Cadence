@@ -9,6 +9,16 @@ export async function mintEphemeralToken(expiresAfterSeconds = 3600) {
   const apiKey = config.bosonApiKey?.trim();
 
   if (!apiKey) {
+    if (process.env.DEMO_MODE === 'true' || process.env.MOCK_BOSON === 'true') {
+      console.warn('[Cadence Server] BOSON_API_KEY missing; generating mock ephemeral token for simulation mode');
+      return {
+        client_secret: {
+          value: `bai-eph-simulated-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          expires_at: Math.floor(Date.now() / 1000) + expiresAfterSeconds
+        },
+        mode: 'mock'
+      };
+    }
     throw new Error('BOSON_API_KEY environment variable is not configured. Please supply a valid Boson AI API key in server/.env.');
   }
 
