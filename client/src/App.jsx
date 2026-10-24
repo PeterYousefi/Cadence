@@ -10,6 +10,7 @@ import { BosonWebSocketClient } from './services/bosonWebSocket.js';
 import { fetchEphemeralToken } from './services/sessionApi.js';
 import { renderMermaidSvg } from './utils/mermaidRenderer.js';
 import { fireCyberpunkConfetti } from './utils/confetti.js';
+import { playConnectCue, playDisconnectCue, playDiagramGeneratedCue } from './utils/audioCues.js';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts.js';
 import { ARCHITECTURE_PRESETS } from './constants/presets.js';
 import { WS_STATUS } from './constants/cadence.js';
@@ -78,6 +79,7 @@ export function App() {
     if (highlighted) setHighlightedComponent(highlighted);
 
     fireCyberpunkConfetti();
+    playDiagramGeneratedCue();
     return true;
   }, [addToast]);
 
@@ -141,6 +143,7 @@ export function App() {
       if (audioPlayerRef.current) {
         audioPlayerRef.current.flush();
       }
+      playDisconnectCue();
       setWsStatus(WS_STATUS.DISCONNECTED);
       addToast('Cadence engine disconnected', 'info');
       return;
@@ -161,6 +164,7 @@ export function App() {
       const client = new BosonWebSocketClient({
         onOpen: () => {
           setWsStatus(WS_STATUS.CONNECTED);
+          playConnectCue();
           addToast('Full-duplex WebSocket session active!', 'success');
           // Automatically start recording microphone
           startRecording(client);
