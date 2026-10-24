@@ -5,8 +5,8 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "node --watch src/index.js",
+    "start": "RUN_STANDALONE=true node src/index.js",
+    "dev": "RUN_STANDALONE=true node --watch src/index.js",
     "test": "node test/health.test.js && node test/session.test.js"
   },
   "dependencies": {
