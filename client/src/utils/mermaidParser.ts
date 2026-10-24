@@ -1,13 +1,8 @@
 /**
- * Mermaid diagram sanitizer, validator, and formatter.
+ * Mermaid diagram sanitizer, validator, and formatter in TypeScript.
  */
 
-/**
- * Sanitizes raw LLM output into clean, valid Mermaid.js code.
- * @param {string} raw
- * @returns {string}
- */
-export function sanitizeMermaidCode(raw) {
+export function sanitizeMermaidCode(raw: string): string {
   if (!raw || typeof raw !== 'string') {
     return 'graph TD\n  Start([Empty Architecture])';
   }
@@ -49,24 +44,16 @@ export function sanitizeMermaidCode(raw) {
   );
 
   if (!hasHeader) {
-    // If the LLM omitted the graph directive, default to graph TD
     code = `graph TD\n  ${code}`;
   }
 
   return code;
 }
 
-/**
- * Applies Cyberpunk theme class definitions or styling to a Mermaid graph if not already styled.
- * @param {string} code
- * @param {string} [highlightedId]
- * @returns {string}
- */
-export function enhanceMermaidStyling(code, highlightedId) {
+export function enhanceMermaidStyling(code: string, highlightedId?: string): string {
   let enhanced = code;
 
   if (highlightedId && code.includes(highlightedId)) {
-    // Append classDef or style for the highlighted node
     enhanced += `\n  style ${highlightedId} fill:#8b5cf6,stroke:#ec4899,stroke-width:3px,color:#ffffff`;
   }
 
