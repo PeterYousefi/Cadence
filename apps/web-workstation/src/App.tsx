@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { WorkstationHeader } from './components/WorkstationHeader';
 import { TelemetryRail } from './components/TelemetryRail';
+import { PrincipalAvatar, AvatarPersona } from './components/PrincipalAvatar';
 import { ArchitectCanvas } from './components/ArchitectCanvas';
 import { JudgeRubricModal } from './components/JudgeRubricModal';
 import { HiggsTtsModal } from './components/HiggsTtsModal';
@@ -31,15 +32,16 @@ export function App() {
   const [sessionSeconds, setSessionSeconds] = useState<number>(0);
   const [micRms, setMicRms] = useState<number>(0);
   const [audioChunksRx, setAudioChunksRx] = useState<number>(0);
+  const [selectedVoice, setSelectedVoice] = useState<string>('chloe');
 
   // Diagram & Tool Call State
-  const [mermaidCode, setMermaidCode] = useState<string>(ARCHITECTURE_PRESETS[0].mermaid); // Default: Kafka Streaming
+  const [mermaidCode, setMermaidCode] = useState<string>(ARCHITECTURE_PRESETS[0].mermaid); // Default: Tokyo 7-Day Itinerary
   const [svgContent, setSvgContent] = useState<string>('');
   const [isRendering, setIsRendering] = useState<boolean>(false);
-  const [lastSummary, setLastSummary] = useState<string>('Kafka Event-Driven Architecture blueprint loaded');
-  const [highlightedComponent, setHighlightedComponent] = useState<string>('TopicOrders');
+  const [lastSummary, setLastSummary] = useState<string>('Tokyo 7-Day Travel Itinerary initialized');
+  const [highlightedComponent, setHighlightedComponent] = useState<string>('Shibuya');
   const [failedComponents, setFailedComponents] = useState<string[]>([]);
-  const [activePresetId, setActivePresetId] = useState<string>('kafka');
+  const [activePresetId, setActivePresetId] = useState<string>('tokyo-trip');
 
   // Modals & Drawers
   const [logs, setLogs] = useState<ActivityLogItem[]>([]);
@@ -211,6 +213,7 @@ export function App() {
           setWsStatus('CONNECTED');
           playConnectCue();
           addToast('Full-duplex 24kHz WebSocket session locked!', 'success');
+          client.sendSessionUpdate(selectedVoice);
           startRecording(client);
         },
         onClose: () => {
@@ -343,6 +346,15 @@ export function App() {
     }
   };
 
+  // Avatar Persona & Voice Selection Handler
+  const handleSelectAvatar = (persona: AvatarPersona) => {
+    setSelectedVoice(persona.voice);
+    addToast(`Advisor avatar switched to ${persona.name} (Voice: ${persona.voice})`, 'info');
+    if (socketClientRef.current && wsStatus === 'CONNECTED') {
+      socketClientRef.current.updateVoice(persona.voice);
+    }
+  };
+
   // Preset Selector
   const handleSelectPreset = (preset: ArchitecturePreset) => {
     setActivePresetId(preset.id);
@@ -410,6 +422,7 @@ export function App() {
           onForceCommitTurn={handleForceCommitTurn}
           onSelectPreset={handleSelectPreset}
           onInjectChaos={handleInjectChaosAction}
+          onSelectAvatar={handleSelectAvatar}
         />
 
         {/* Right 65% (Architect Canvas Viewport) */}

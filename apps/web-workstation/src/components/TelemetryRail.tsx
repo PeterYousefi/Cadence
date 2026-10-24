@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { PrincipalAvatar } from './PrincipalAvatar';
+import { PrincipalAvatar, AvatarPersona } from './PrincipalAvatar';
 import { PresetBar } from './PresetBar';
 import { AudioWaveform } from './AudioWaveform';
 import { 
@@ -48,6 +48,7 @@ interface TelemetryRailProps {
   onForceCommitTurn: () => void;
   onSelectPreset: (preset: ArchitecturePreset) => void;
   onInjectChaos: () => void;
+  onSelectAvatar?: (persona: AvatarPersona) => void;
 }
 
 export function TelemetryRail({
@@ -70,7 +71,8 @@ export function TelemetryRail({
   onToggleMic,
   onForceCommitTurn,
   onSelectPreset,
-  onInjectChaos
+  onInjectChaos,
+  onSelectAvatar
 }: TelemetryRailProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -89,11 +91,12 @@ export function TelemetryRail({
   return (
     <aside className="w-[35%] min-w-[380px] max-w-[480px] h-full flex flex-col gap-2.5 p-3.5 bg-[#F4F3EF] border-r-2 border-[#111111] select-none overflow-hidden z-20 font-mono text-xs">
       
-      {/* 1. Principal Architect Avatar (Higgs Avatar) */}
+      {/* 1. Principal AI Advisor Avatar (Higgs Avatar) with 5-Persona Carousel */}
       <PrincipalAvatar
         isSpeaking={isSpeaking}
         isDuplexActive={isConnected}
         audioSource={speakerSource}
+        onSelectAvatar={onSelectAvatar}
       />
 
       {/* 2. Top Quick-Launch Presets */}

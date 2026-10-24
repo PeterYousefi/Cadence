@@ -25,45 +25,45 @@ export function WorkstationHeader({
         <div>
           <div className="flex items-center gap-2">
             <h1 className="font-sans text-sm font-bold tracking-wider text-[#111111] uppercase">
-              CADENCE <span className="text-[#FF4F00]">//</span> BOSON AI MULTI-MODEL WORKSTATION
+              CADENCE <span className="text-[#FF4F00]">//</span> VISUAL LIFE & EVENT PLANNER
             </h1>
             <span className="text-[9px] font-bold px-1.5 py-0.2 bg-[#FF4F00] text-[#FFFFFF] uppercase">
-              3-MODEL ENGINE
+              VOICE MIND-MAP
             </span>
           </div>
           <p className="text-[10px] text-[#767676]">
-            higgs-realtime · higgs-avatar · higgs-tts-3 · Swiss CAD Architecture
+            higgs-realtime · higgs-avatar · higgs-tts-3 · Real-Time Itineraries & Schedules
           </p>
         </div>
       </div>
 
       {/* Hardware Action Buttons */}
       <div className="flex items-center gap-2 text-xs">
-        {/* Judge Rubric QA Button */}
+        {/* Diagnostics QA Button */}
         <button
           onClick={onOpenRubric}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FFFFFF] hover:bg-[#F4F3EF] border border-[#111111] font-bold uppercase tracking-wider text-[11px] shadow-cad-sm active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
         >
           <Award className="w-3.5 h-3.5 text-[#008A4B]" />
-          <span>[JUDGE RUBRIC & LIVE QA // 100% READY]</span>
+          <span>[SYSTEM DIAGNOSTICS & QA]</span>
         </button>
 
-        {/* Higgs TTS 3 Expressive Incident Narrator Button */}
+        {/* Higgs TTS 3 Expressive Event Narrator Button */}
         <button
           onClick={onOpenTtsNarrator}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FFFFFF] hover:bg-[#F4F3EF] border border-[#111111] font-bold uppercase tracking-wider text-[11px] shadow-cad-sm active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
         >
           <Flame className="w-3.5 h-3.5 text-[#FF4F00]" />
-          <span>[CHAOS POST-MORTEM & BRIEFING]</span>
+          <span>[EVENT NARRATOR & BRIEFING]</span>
         </button>
 
-        {/* Export Terraform Drawer Button */}
+        {/* Export Spec Drawer Button */}
         <button
           onClick={onOpenTerraform}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111111] text-[#FFFFFF] hover:bg-[#222222] font-bold uppercase tracking-wider text-[11px] shadow-cad-sm active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
         >
           <FileCode className="w-3.5 h-3.5 text-[#FF4F00]" />
-          <span>[EXPORT TERRAFORM]</span>
+          <span>[EXPORT PLAN SPEC]</span>
         </button>
       </div>
     </header>
