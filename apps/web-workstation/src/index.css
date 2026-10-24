@@ -4,70 +4,98 @@
 
 @layer base {
   body {
-    background-color: #09090b;
-    color: #f4f4f5;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: #F4F3EF;
+    color: #111111;
+    font-family: 'IBM Plex Mono', monospace;
   }
-  
-  code, pre {
-    font-family: 'Fira Code', monospace;
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', sans-serif;
   }
 }
 
-/* Custom Cyberpunk Scrollbar */
+/* Swiss 24px Blueprint Grid */
+.blueprint-grid {
+  background-size: 24px 24px;
+  background-image: 
+    linear-gradient(to right, #E2E0D8 1px, transparent 1px),
+    linear-gradient(to bottom, #E2E0D8 1px, transparent 1px);
+}
+
+.blueprint-dots {
+  background-size: 24px 24px;
+  background-image: radial-gradient(#111111 1px, transparent 1px);
+  opacity: 0.15;
+}
+
+/* Industrial Mechanical Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #09090b;
+  background: #EBEAE5;
+  border-left: 1px solid #111111;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #27272a;
-  border-radius: 3px;
+  background: #111111;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #06b6d4;
+  background: #FF4F00;
 }
 
-/* Neon Glow Utilities */
-.neon-border-cyan {
-  border-color: #06b6d4;
-  box-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
-}
-
-.neon-border-emerald {
-  border-color: #10b981;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
-}
-
-.neon-border-violet {
-  border-color: #8b5cf6;
-  box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
-}
-
-.neon-border-pink {
-  border-color: #ec4899;
-  box-shadow: 0 0 10px rgba(236, 72, 153, 0.3);
-}
-
-/* Mermaid SVG Canvas Smooth Transitions */
+/* Mermaid SVG High-Contrast CAD Architecture Styling */
 .mermaid-diagram-container svg {
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease-in-out;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease-in-out;
   max-width: 100%;
   height: auto;
 }
 
-/* Diagram node animation highlight */
-@keyframes nodeHighlightPulse {
-  0% { filter: drop-shadow(0 0 4px #06b6d4); }
-  50% { filter: drop-shadow(0 0 16px #ec4899); }
-  100% { filter: drop-shadow(0 0 4px #06b6d4); }
+/* CAD Schematic Node Hard 4px Offset Drop Shadows */
+.mermaid-diagram-container .node rect,
+.mermaid-diagram-container .node polygon,
+.mermaid-diagram-container .node circle,
+.mermaid-diagram-container .node path {
+  fill: #FFFFFF !important;
+  stroke: #111111 !important;
+  stroke-width: 2.5px !important;
+  filter: drop-shadow(4px 4px 0px #111111);
 }
 
-.highlighted-node {
-  animation: nodeHighlightPulse 2s infinite ease-in-out;
+.mermaid-diagram-container .node text,
+.mermaid-diagram-container .node span {
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-weight: 600 !important;
+  color: #111111 !important;
+  fill: #111111 !important;
+}
+
+/* Structural Subgraph Framing */
+.mermaid-diagram-container .cluster rect {
+  fill: #F4F3EF !important;
+  stroke: #111111 !important;
+  stroke-width: 1.5px !important;
+  stroke-dasharray: 4 4 !important;
+}
+
+.mermaid-diagram-container .cluster text {
+  font-family: 'IBM Plex Mono', monospace !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  fill: #111111 !important;
+}
+
+/* Edge Connecting Lines */
+.mermaid-diagram-container .edgePath path {
+  stroke: #111111 !important;
+  stroke-width: 2px !important;
+}
+
+.mermaid-diagram-container .marker {
+  fill: #111111 !important;
+  stroke: #111111 !important;
 }
