@@ -1,5 +1,5 @@
 /**
- * Cadence System Constants and Configuration
+ * Cadence System Constants and Configuration in TypeScript.
  */
 
 export const AUDIO_CONFIG = {
@@ -7,7 +7,7 @@ export const AUDIO_CONFIG = {
   CHANNELS: 1,
   BUFFER_SIZE: 2048,
   BIT_DEPTH: 16
-};
+} as const;
 
 export const WS_STATUS = {
   DISCONNECTED: 'DISCONNECTED',
@@ -17,7 +17,7 @@ export const WS_STATUS = {
   SPEAKING: 'SPEAKING',
   BARGED_IN: 'BARGED_IN',
   ERROR: 'ERROR'
-};
+} as const;
 
 export const BOSON_CONFIG = {
   WS_URL: 'wss://api.boson.ai/v1/realtime',
@@ -26,7 +26,7 @@ export const BOSON_CONFIG = {
   STT_MODEL: 'higgs-stt-3.1',
   VAD_THRESHOLD: 0.5,
   VAD_SILENCE_MS: 300
-};
+} as const;
 
 export const SYSTEM_INSTRUCTIONS = 
   "You are Cadence, an elite systems architect. Converse concisely and casually. " +
