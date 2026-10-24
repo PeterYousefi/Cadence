@@ -91,13 +91,13 @@ export class BosonWebSocketClient {
     };
   }
 
-  public sendSessionUpdate(): void {
+  public sendSessionUpdate(voiceOverride?: string): void {
     const sessionPayload = {
       type: 'session.update',
       session: {
         modalities: ['text', 'audio'],
         model: BOSON_CONFIG.REALTIME_MODEL,
-        voice: BOSON_CONFIG.VOICE,
+        voice: voiceOverride || BOSON_CONFIG.VOICE,
         input_audio_format: 'pcm16',
         output_audio_format: 'pcm16',
         input_audio_transcription: {
@@ -116,7 +116,19 @@ export class BosonWebSocketClient {
     };
 
     this.send(sessionPayload);
-    console.log('[Cadence WS] Dispatched session.update (modalities: text+audio, pcm16, server_vad 0.4)');
+    console.log(`[Cadence WS] Dispatched session.update (voice: ${voiceOverride || BOSON_CONFIG.VOICE}, modalities: text+audio, pcm16)`);
+  }
+
+  public updateVoice(voice: string): void {
+    if (this.isConnected && this.ws && this.ws.readyState === WebSocket.OPEN) {
+      console.log(`[Cadence WS] Switching session voice to ${voice}`);
+      this.send({
+        type: 'session.update',
+        session: {
+          voice
+        }
+      });
+    }
   }
 
   public appendAudioBuffer(base64Chunk: string): void {
