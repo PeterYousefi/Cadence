@@ -347,11 +347,11 @@ export function App() {
     }
   };
 
-  // Avatar Persona & Voice Selection Handler
+  // Neural Kinematic Persona & Voice Selection Handler
   const handleSelectAvatar = (persona: Persona) => {
     setSelectedPersona(persona);
     setSelectedVoice(persona.voice);
-    addToast(`Advisor avatar switched to ${persona.name} (Voice: ${persona.voice})`, 'info');
+    addToast(`Neural kinematic persona switched to ${persona.name} (Voice: ${persona.voice})`, 'info');
     if (socketClientRef.current && wsStatus === 'CONNECTED') {
       socketClientRef.current.updateVoice(persona.voice);
     }
