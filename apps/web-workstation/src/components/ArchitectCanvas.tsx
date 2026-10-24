@@ -40,7 +40,7 @@ export function ArchitectCanvas({
   onSendVoiceCommand
 }: ArchitectCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [zoom, setZoom] = useState<number>(1.15); // Default scaled to fill ~85%
+  const [zoom, setZoom] = useState<number>(2.20); // Default forced to 220% scale focused on center
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -55,7 +55,7 @@ export function ArchitectCanvas({
 
   useEffect(() => {
     if (svgContent) {
-      setZoom(1.15);
+      setZoom(2.20); // Maintain 220% default zoom on graph refresh
       setPan({ x: 0, y: 0 });
     }
   }, [svgContent]);
@@ -84,10 +84,10 @@ export function ArchitectCanvas({
   };
 
   // Zoom handlers
-  const handleZoomIn = () => setZoom((z) => Math.min(3.0, +(z + 0.15).toFixed(2)));
-  const handleZoomOut = () => setZoom((z) => Math.max(0.4, +(z - 0.15).toFixed(2)));
+  const handleZoomIn = () => setZoom((z) => Math.min(5.0, +(z + 0.20).toFixed(2)));
+  const handleZoomOut = () => setZoom((z) => Math.max(0.4, +(z - 0.20).toFixed(2)));
   const handleFitToScreen = () => {
-    setZoom(1.15);
+    setZoom(2.20); // Reset to 220% default zoom
     setPan({ x: 0, y: 0 });
   };
 
@@ -307,34 +307,28 @@ export function ArchitectCanvas({
         <div className="flex items-center gap-2 overflow-x-auto text-[10px]">
           <span className="font-bold text-[#767676] uppercase">QUICK COMMANDS:</span>
           <button
-            onClick={() => onSendVoiceCommand?.("Add an Upstash Redis cache between our API gateway and user service.")}
+            onClick={() => onSendVoiceCommand?.("Add a scenic bullet train day trip to Kyoto visiting Fushimi Inari and Gion district.")}
             className="px-2 py-1 bg-[#F4F3EF] hover:bg-[#EBEAE5] border border-[#111111] font-bold shrink-0 transition-colors"
           >
-            + Add Redis Cache
+            + Add a Day Trip to Kyoto
           </button>
           <button
-            onClick={() => onSendVoiceCommand?.("Analyze auth service 503 outage caused by network partition. Check logs, verify circuit breaker status, route to local JWKS fallback, and gradually close circuit breaker once restored.")}
+            onClick={() => onSendVoiceCommand?.("Review our estimated budget breakdown and suggest cost optimizations.")}
             className="px-2 py-1 bg-[#FEF3C7] hover:bg-[#FDE68A] border border-[#D97706] text-[#B45309] font-bold shrink-0 transition-colors"
           >
-            🛡️ Resolve Auth 503 (Circuit Breaker)
+            + Add Budget Review
           </button>
           <button
-            onClick={() => onSendVoiceCommand?.("Add an Apache Kafka event backbone with Schema Registry.")}
-            className="px-2 py-1 bg-[#F4F3EF] hover:bg-[#EBEAE5] border border-[#111111] font-bold shrink-0 transition-colors"
-          >
-            + Wire Kafka Backbone
-          </button>
-          <button
-            onClick={() => onSendVoiceCommand?.("Simulate chaos outage: kill the primary PostgreSQL cluster.")}
+            onClick={() => onSendVoiceCommand?.("Simulate contingency plan: Handle heavy rain or bad weather on our outdoor day.")}
             className="px-2 py-1 bg-[#FEE2E2] hover:bg-[#FECACA] border border-[#DC2626] text-[#DC2626] font-bold shrink-0 transition-colors"
           >
-            ⚡ Kill PostgreSQL (Chaos)
+            • Handle Rain Contingency
           </button>
           <button
-            onClick={() => onSendVoiceCommand?.("Switch this whole architecture to global multi-region edge on Cloudflare Workers.")}
+            onClick={() => onSendVoiceCommand?.("Add an authentic evening food and cocktail tour through local hidden gems.")}
             className="px-2 py-1 bg-[#E8F5EE] hover:bg-[#D1EFE0] border border-[#008A4B] text-[#008A4B] font-bold shrink-0 transition-colors"
           >
-            🌐 Migrate to Edge
+            + Add Evening Food Tour
           </button>
         </div>
 
@@ -344,7 +338,7 @@ export function ArchitectCanvas({
             type="text"
             value={commandInput}
             onChange={(e) => setCommandInput(e.target.value)}
-            placeholder="Type architecture prompt or speak in any language..."
+            placeholder="Plan a trip, organize an event, or brainstorm..."
             className="flex-1 px-3 py-1.5 bg-[#F4F3EF] border border-[#111111] text-xs font-mono text-[#111111] focus:outline-none focus:border-[#FF4F00]"
           />
           <button
