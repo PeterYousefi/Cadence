@@ -19,7 +19,7 @@ const ToastContext = createContext<ToastContextType | null>(null);
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
-  const addToast = useCallback((message: string, type: ToastType = 'info', duration: number = 5000) => {
+  const addToast = useCallback((message: string, type: ToastType = 'info', duration: number = 4500) => {
     const id = Date.now() + Math.random().toString(36).substring(2, 6);
     setToasts((prev) => [...prev, { id, message, type }]);
 
@@ -37,35 +37,35 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ addToast, removeToast }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-md w-full pointer-events-none p-2">
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-md w-full pointer-events-none p-2 font-mono">
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`pointer-events-auto flex items-start gap-3 p-3.5 rounded-xl border backdrop-blur-md shadow-2xl transition-all duration-300 animate-slide-up ${
+            className={`pointer-events-auto flex items-start gap-2.5 p-3 bg-[#FFFFFF] border-2 border-[#111111] shadow-cad transition-all duration-150 animate-slide-up ${
               toast.type === 'error'
-                ? 'bg-rose-950/70 border-rose-500/50 text-rose-200 shadow-rose-950/30'
+                ? 'border-l-4 border-l-[#DC2626] text-[#111111]'
                 : toast.type === 'success'
-                ? 'bg-emerald-950/70 border-emerald-500/50 text-emerald-200 shadow-emerald-950/30'
+                ? 'border-l-4 border-l-[#008A4B] text-[#111111]'
                 : toast.type === 'warning'
-                ? 'bg-amber-950/70 border-amber-500/50 text-amber-200 shadow-amber-950/30'
-                : 'bg-zinc-900/80 border-cyan-500/40 text-cyan-200 shadow-cyan-950/30'
+                ? 'border-l-4 border-l-[#FF4F00] text-[#111111]'
+                : 'border-l-4 border-l-[#111111] text-[#111111]'
             }`}
           >
             <div className="mt-0.5 shrink-0">
-              {toast.type === 'error' && <XCircle className="w-5 h-5 text-rose-400" />}
-              {toast.type === 'success' && <CheckCircle className="w-5 h-5 text-emerald-400" />}
-              {toast.type === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-400" />}
-              {toast.type === 'info' && <Info className="w-5 h-5 text-cyan-400" />}
+              {toast.type === 'error' && <XCircle className="w-4 h-4 text-[#DC2626]" />}
+              {toast.type === 'success' && <CheckCircle className="w-4 h-4 text-[#008A4B]" />}
+              {toast.type === 'warning' && <AlertTriangle className="w-4 h-4 text-[#FF4F00]" />}
+              {toast.type === 'info' && <Info className="w-4 h-4 text-[#111111]" />}
             </div>
-            <div className="flex-1 text-xs leading-relaxed font-mono break-words">
+            <div className="flex-1 text-xs leading-relaxed font-bold break-words">
               {toast.message}
             </div>
             <button
               onClick={() => removeToast(toast.id)}
-              className="text-zinc-400 hover:text-zinc-100 transition-colors shrink-0"
+              className="text-[#767676] hover:text-[#111111] transition-colors shrink-0 p-0.5"
               aria-label="Close toast"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         ))}
