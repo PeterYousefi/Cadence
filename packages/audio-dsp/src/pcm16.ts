@@ -55,16 +55,28 @@ export function downsampleTo24kHz(
   return result;
 }
 
+export function computeRmsVolume(buffer: Float32Array): number {
+  if (!buffer || buffer.length === 0) return 0;
+  let sumSquares = 0;
+  for (let i = 0; i < buffer.length; i++) {
+    sumSquares += buffer[i] * buffer[i];
+  }
+  return Math.sqrt(sumSquares / buffer.length);
+}
+
 export function arrayBufferToBase64(buffer: ArrayBuffer | Uint8Array): string {
   const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
   let binary = '';
   const len = bytes.byteLength;
-  const chunkSize = 0x8000;
+  const chunkSize = 2048; // Safe chunk size <= 4096 to prevent call-stack overflow
   for (let i = 0; i < len; i += chunkSize) {
-    binary += String.fromCharCode.apply(
-      null,
-      Array.from(bytes.subarray(i, Math.min(i + chunkSize, len)))
-    );
+    const end = Math.min(i + chunkSize, len);
+    const sub = bytes.subarray(i, end);
+    let chunkStr = '';
+    for (let j = 0; j < sub.length; j++) {
+      chunkStr += String.fromCharCode(sub[j]);
+    }
+    binary += chunkStr;
   }
   return btoa(binary);
 }
