@@ -1,18 +1,24 @@
 import { useEffect } from 'react';
 
+export interface KeyboardShortcutsOptions {
+  onToggleMic?: () => void;
+  onCloseModals?: () => void;
+  onToggleHelp?: () => void;
+}
+
 export function useKeyboardShortcuts({
   onToggleMic,
   onCloseModals,
   onToggleHelp
-}) {
+}: KeyboardShortcutsOptions): void {
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      // Ignore if user is inside an input, textarea, or contentEditable
-      const target = e.target;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
       if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
       ) {
         return;
       }
