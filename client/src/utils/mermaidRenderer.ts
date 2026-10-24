@@ -1,9 +1,9 @@
 import mermaid from 'mermaid';
-import { sanitizeMermaidCode } from './mermaidParser.js';
+import { sanitizeMermaidCode } from './mermaidParser';
 
 let isInitialized = false;
 
-export function initMermaid() {
+export function initMermaid(): void {
   if (isInitialized) return;
   mermaid.initialize({
     startOnLoad: false,
@@ -34,12 +34,13 @@ export function initMermaid() {
 
 let counter = 0;
 
-/**
- * Safely renders Mermaid code to SVG string.
- * @param {string} rawCode
- * @returns {Promise<{ svg: string, sanitizedCode: string }>}
- */
-export async function renderMermaidSvg(rawCode) {
+export interface MermaidRenderResult {
+  svg: string | null;
+  sanitizedCode: string;
+  error: string | null;
+}
+
+export async function renderMermaidSvg(rawCode: string): Promise<MermaidRenderResult> {
   initMermaid();
   const sanitizedCode = sanitizeMermaidCode(rawCode);
   const renderId = `cadence-mermaid-${Date.now()}-${counter++}`;
@@ -47,8 +48,7 @@ export async function renderMermaidSvg(rawCode) {
   try {
     const { svg } = await mermaid.render(renderId, sanitizedCode);
     return { svg, sanitizedCode, error: null };
-  } catch (error) {
-    // Cleanup temporary element if created by mermaid
+  } catch (error: any) {
     const tempEl = document.getElementById(renderId);
     if (tempEl) tempEl.remove();
     const dEl = document.getElementById(`d${renderId}`);
@@ -58,7 +58,7 @@ export async function renderMermaidSvg(rawCode) {
     return {
       svg: null,
       sanitizedCode,
-      error: error.message || 'Syntax error in Mermaid diagram definition'
+      error: error?.message || 'Syntax error in Mermaid diagram definition'
     };
   }
 }
