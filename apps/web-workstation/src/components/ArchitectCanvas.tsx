@@ -11,8 +11,12 @@ import {
   Sparkles, 
   Layers, 
   Eye, 
-  Terminal 
+  Send,
+  DollarSign,
+  Activity,
+  Server
 } from 'lucide-react';
+import { estimateInfrastructureMetrics } from '../../../../packages/schema-engine/src/costEstimator';
 
 interface ArchitectCanvasProps {
   svgContent: string;
@@ -21,6 +25,8 @@ interface ArchitectCanvasProps {
   lastSummary?: string;
   highlightedComponent?: string;
   onManualUpdateCode?: (newCode: string) => void;
+  onOpenTerraform?: () => void;
+  onSendVoiceCommand?: (text: string) => void;
 }
 
 export function ArchitectCanvas({
@@ -29,33 +35,38 @@ export function ArchitectCanvas({
   isRendering,
   lastSummary,
   highlightedComponent,
-  onManualUpdateCode
+  onManualUpdateCode,
+  onOpenTerraform,
+  onSendVoiceCommand
 }: ArchitectCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [zoom, setZoom] = useState<number>(1);
+  const [zoom, setZoom] = useState<number>(1.15); // Default scaled to fill ~85%
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [copied, setCopied] = useState<boolean>(false);
   const [isCodeDrawerOpen, setIsCodeDrawerOpen] = useState<boolean>(false);
   const [editableCode, setEditableCode] = useState<string>(mermaidCode);
+  const [commandInput, setCommandInput] = useState<string>('');
 
   useEffect(() => {
     setEditableCode(mermaidCode);
   }, [mermaidCode]);
 
-  // Center diagram when new diagram is rendered
   useEffect(() => {
     if (svgContent) {
-      setZoom(1);
+      setZoom(1.15);
       setPan({ x: 0, y: 0 });
     }
   }, [svgContent]);
 
+  // Compute live architecture cost & latency metrics
+  const metrics = estimateInfrastructureMetrics(mermaidCode);
+
   // Pan handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
-    if (target.closest('button') || target.closest('textarea') || target.closest('.no-pan')) return;
+    if (target.closest('button') || target.closest('textarea') || target.closest('input') || target.closest('.no-pan')) return;
     setIsDragging(true);
     setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
   };
@@ -73,10 +84,10 @@ export function ArchitectCanvas({
   };
 
   // Zoom handlers
-  const handleZoomIn = () => setZoom((z) => Math.min(2.5, +(z + 0.15).toFixed(2)));
-  const handleZoomOut = () => setZoom((z) => Math.max(0.3, +(z - 0.15).toFixed(2)));
-  const handleResetZoom = () => {
-    setZoom(1);
+  const handleZoomIn = () => setZoom((z) => Math.min(3.0, +(z + 0.15).toFixed(2)));
+  const handleZoomOut = () => setZoom((z) => Math.max(0.4, +(z - 0.15).toFixed(2)));
+  const handleFitToScreen = () => {
+    setZoom(1.15);
     setPan({ x: 0, y: 0 });
   };
 
@@ -84,7 +95,7 @@ export function ArchitectCanvas({
     if (e.ctrlKey || e.metaKey) {
       e.preventDefault();
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      setZoom((z) => Math.min(2.5, Math.max(0.3, +(z + delta).toFixed(2))));
+      setZoom((z) => Math.min(3.0, Math.max(0.4, +(z + delta).toFixed(2))));
     }
   };
 
@@ -109,7 +120,7 @@ export function ArchitectCanvas({
     const svgUrl = URL.createObjectURL(svgBlob);
     const downloadLink = document.createElement('a');
     downloadLink.href = svgUrl;
-    downloadLink.download = `cadence-spec-${Date.now()}.svg`;
+    downloadLink.download = `cadence-blueprint-${Date.now()}.svg`;
     document.body.appendChild(downloadLink);
     downloadLink.click();
     document.body.removeChild(downloadLink);
@@ -123,68 +134,106 @@ export function ArchitectCanvas({
     }
   };
 
+  const handleSendCommand = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commandInput.trim()) return;
+    if (onSendVoiceCommand) {
+      onSendVoiceCommand(commandInput.trim());
+      setCommandInput('');
+    }
+  };
+
   return (
     <main
-      className="relative flex-1 h-full bg-zinc-950 overflow-hidden select-none flex flex-col"
+      className="relative flex-1 h-full bg-[#F4F3EF] blueprint-grid overflow-hidden select-none flex flex-col font-mono"
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
-      {/* High-tech Canvas Background Grid */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#18181b_1px,transparent_1px),linear-gradient(to_bottom,#18181b_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-40 pointer-events-none" />
+      {/* Top Left Live Infrastructure Metrics HUD */}
+      <div className="absolute top-4 left-4 z-20 pointer-events-none flex flex-col gap-2 max-w-md">
+        {/* Cost & P99 HUD */}
+        <div className="pointer-events-auto flex items-center gap-3 p-2.5 bg-[#FFFFFF] border-2 border-[#111111] shadow-cad text-xs">
+          <div className="flex items-center gap-1.5 border-r border-[#111111] pr-3">
+            <DollarSign className="w-4 h-4 text-[#008A4B]" />
+            <div>
+              <span className="text-[9px] text-[#767676] block font-bold">EST. CLOUD COST</span>
+              <span className="font-bold text-xs text-[#111111]">${metrics.monthlyCostUSD} / mo</span>
+            </div>
+          </div>
 
-      {/* Top Right "Copy Spec" & Zoom Toolbar */}
+          <div className="flex items-center gap-1.5 border-r border-[#111111] pr-3">
+            <Activity className="w-4 h-4 text-[#FF4F00]" />
+            <div>
+              <span className="text-[9px] text-[#767676] block font-bold">P99 LATENCY</span>
+              <span className="font-bold text-xs text-[#111111]">{metrics.p99LatencyMs}ms</span>
+            </div>
+          </div>
+
+          <div>
+            <span className="text-[9px] text-[#767676] block font-bold">AVAILABILITY</span>
+            <span className="font-bold text-[10px] text-[#008A4B]">{metrics.availabilityTier}</span>
+          </div>
+        </div>
+
+        {/* Mutation Summary & Target Node Highlight */}
+        {lastSummary && (
+          <div className="pointer-events-auto flex items-center gap-2 px-3 py-1.5 bg-[#FFFFFF] border border-[#111111] text-xs font-medium shadow-cad-sm animate-fade-in">
+            <Sparkles className="w-3.5 h-3.5 text-[#FF4F00] shrink-0" />
+            <span className="truncate">{lastSummary}</span>
+          </div>
+        )}
+
+        {highlightedComponent && (
+          <div className="pointer-events-auto flex items-center gap-2 px-3 py-1 bg-[#111111] text-[#FFFFFF] text-xs font-bold border border-[#111111] shadow-cad-sm">
+            <span className="w-2 h-2 bg-[#FF4F00] inline-block animate-ping" />
+            <span>MUTATING NODE: <span className="text-[#FF4F00] underline">{highlightedComponent}</span></span>
+          </div>
+        )}
+      </div>
+
+      {/* Top Right Tactile Drafting Toolbar */}
       <div className="absolute top-4 right-4 z-30">
-        <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-zinc-900/60 border border-zinc-800 backdrop-blur-md shadow-2xl text-xs font-mono">
-          {/* Zoom Buttons */}
+        <div className="flex items-center gap-1.5 p-1.5 bg-[#FFFFFF] border-2 border-[#111111] shadow-cad text-xs">
           <button
             onClick={handleZoomOut}
-            className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-colors"
+            className="p-1.5 hover:bg-[#F4F3EF] border border-[#111111] text-[#111111] transition-colors"
             title="Zoom Out (-)"
           >
             <ZoomOut className="w-4 h-4" />
           </button>
 
-          <span className="px-2 py-0.5 text-[11px] font-semibold text-zinc-300 min-w-[48px] text-center select-none">
+          <span className="px-2 font-bold text-xs min-w-[50px] text-center select-none">
             {Math.round(zoom * 100)}%
           </span>
 
           <button
             onClick={handleZoomIn}
-            className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-colors"
+            className="p-1.5 hover:bg-[#F4F3EF] border border-[#111111] text-[#111111] transition-colors"
             title="Zoom In (+)"
           >
             <ZoomIn className="w-4 h-4" />
           </button>
 
-          <div className="w-[1px] h-4 bg-zinc-800 mx-1" />
+          <div className="w-[1px] h-5 bg-[#111111] mx-0.5" />
 
-          {/* Reset / Fit */}
+          {/* Fit to Screen */}
           <button
-            onClick={handleResetZoom}
-            className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-colors"
-            title="Reset Zoom (100%)"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-          </button>
-
-          <button
-            onClick={handleResetZoom}
-            className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-colors"
-            title="Fit to Workstation"
+            onClick={handleFitToScreen}
+            className="flex items-center gap-1 px-2.5 py-1.5 hover:bg-[#F4F3EF] border border-[#111111] font-bold text-[11px] uppercase transition-colors"
+            title="Fit Schematic to Viewport"
           >
             <Maximize2 className="w-3.5 h-3.5" />
+            <span>FIT</span>
           </button>
 
-          <div className="w-[1px] h-4 bg-zinc-800 mx-1" />
-
-          {/* Code Spec Inspector Toggle */}
+          {/* Edit Spec Drawer */}
           <button
             onClick={() => setIsCodeDrawerOpen(!isCodeDrawerOpen)}
-            className={`p-2 rounded-xl transition-colors ${
-              isCodeDrawerOpen ? 'bg-cyan-500/20 text-cyan-300' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/80'
+            className={`p-1.5 border border-[#111111] transition-colors ${
+              isCodeDrawerOpen ? 'bg-[#FF4F00] text-[#FFFFFF]' : 'hover:bg-[#F4F3EF]'
             }`}
-            title="View / Edit Mermaid Spec"
+            title="View / Edit Mermaid Source"
           >
             <Code className="w-4 h-4" />
           </button>
@@ -192,62 +241,45 @@ export function ArchitectCanvas({
           {/* Copy Spec Button */}
           <button
             onClick={handleCopySpec}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-800/90 hover:bg-zinc-700/90 text-zinc-200 transition-colors border border-zinc-700/50"
-            title="Copy Raw Spec to Clipboard"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FFFFFF] hover:bg-[#F4F3EF] border border-[#111111] font-bold text-[11px] uppercase transition-colors shadow-cad-sm active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
+            title="Copy Raw Spec"
           >
             {copied ? (
               <>
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-emerald-400 font-semibold text-[11px]">Copied</span>
+                <Check className="w-3.5 h-3.5 text-[#008A4B]" />
+                <span className="text-[#008A4B]">COPIED</span>
               </>
             ) : (
               <>
-                <Copy className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="text-[11px] font-semibold">Copy Spec</span>
+                <Copy className="w-3.5 h-3.5" />
+                <span>COPY SPEC</span>
               </>
             )}
           </button>
 
-          {/* Download SVG */}
+          {/* Export SVG */}
           <button
             onClick={handleDownloadSvg}
-            className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-colors"
-            title="Export Vector SVG"
+            className="p-1.5 hover:bg-[#F4F3EF] border border-[#111111] transition-colors"
+            title="Download SVG Blueprint"
           >
             <Download className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* Top Left Spec Badge & Node Target */}
-      <div className="absolute top-4 left-4 z-20 pointer-events-none flex flex-col gap-2 max-w-lg">
-        {lastSummary && (
-          <div className="pointer-events-auto flex items-center gap-2 px-3.5 py-2 rounded-xl bg-zinc-900/60 border border-zinc-800 text-xs font-mono backdrop-blur-md shadow-xl animate-fade-in">
-            <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
-            <span className="text-zinc-300 truncate font-medium">{lastSummary}</span>
-          </div>
-        )}
-
-        {highlightedComponent && (
-          <div className="pointer-events-auto flex items-center gap-2 px-3 py-1.5 rounded-lg bg-violet-500/10 border border-violet-500/30 text-xs font-mono text-violet-300 backdrop-blur-md">
-            <Layers className="w-3.5 h-3.5 text-pink-400" />
-            <span>Target Node: <strong>{highlightedComponent}</strong></span>
-          </div>
-        )}
-      </div>
-
-      {/* Interactive SVG Diagram Viewport */}
+      {/* Main Massive CAD Schematic Viewport */}
       <div
         ref={containerRef}
         onMouseDown={handleMouseDown}
         onWheel={handleWheel}
-        className={`relative flex-1 w-full h-full flex items-center justify-center p-8 overflow-hidden cursor-grab active:cursor-grabbing transition-opacity duration-300 ${
-          isRendering ? 'opacity-70' : 'opacity-100'
+        className={`relative flex-1 w-full h-full flex items-center justify-center p-8 overflow-hidden cursor-grab active:cursor-grabbing transition-opacity duration-150 ${
+          isRendering ? 'opacity-60' : 'opacity-100'
         }`}
       >
         {svgContent ? (
           <div
-            className="mermaid-diagram-container transition-transform duration-100 ease-out flex items-center justify-center"
+            className="mermaid-diagram-container flex items-center justify-center transition-transform duration-75 ease-out"
             style={{
               transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
               transformOrigin: 'center center'
@@ -255,41 +287,89 @@ export function ArchitectCanvas({
             dangerouslySetInnerHTML={{ __html: svgContent }}
           />
         ) : (
-          <div className="flex flex-col items-center justify-center text-center text-zinc-600 gap-3">
-            <div className="w-16 h-16 rounded-2xl bg-zinc-900/60 border border-zinc-800 flex items-center justify-center shadow-inner backdrop-blur-sm">
-              <Terminal className="w-8 h-8 text-zinc-700 animate-pulse" />
+          <div className="flex flex-col items-center justify-center text-center text-[#767676] gap-3">
+            <div className="w-16 h-16 bg-[#FFFFFF] border-2 border-[#111111] shadow-cad flex items-center justify-center">
+              <Layers className="w-8 h-8 text-[#111111] animate-pulse" />
             </div>
             <div>
-              <p className="text-sm font-mono text-zinc-400 font-medium">Architect Viewport Ready</p>
-              <p className="text-xs text-zinc-600 mt-1">
-                Say a voice prompt or pick a preset to render an interactive system diagram
+              <p className="text-sm font-bold uppercase font-sans text-[#111111]">Architect Viewport Standby</p>
+              <p className="text-xs text-[#767676] mt-0.5">
+                Speak a command or pick a preset to synthesize high-contrast CAD topology
               </p>
             </div>
           </div>
         )}
       </div>
 
+      {/* Bottom Quick-Command Bar (Allows typed or 1-click voice turn triggers over Boson WebSocket) */}
+      <div className="p-3 bg-[#FFFFFF] border-t-2 border-[#111111] shadow-[0px_-2px_0px_#111111] flex items-center justify-between gap-3 z-30">
+        {/* Quick Suggestion Pills */}
+        <div className="flex items-center gap-2 overflow-x-auto text-[10px]">
+          <span className="font-bold text-[#767676] uppercase">QUICK COMMANDS:</span>
+          <button
+            onClick={() => onSendVoiceCommand?.("Add an Upstash Redis cache between our API gateway and user service.")}
+            className="px-2 py-1 bg-[#F4F3EF] hover:bg-[#EBEAE5] border border-[#111111] font-bold shrink-0 transition-colors"
+          >
+            + Add Redis Cache
+          </button>
+          <button
+            onClick={() => onSendVoiceCommand?.("Add an Apache Kafka event backbone with Schema Registry.")}
+            className="px-2 py-1 bg-[#F4F3EF] hover:bg-[#EBEAE5] border border-[#111111] font-bold shrink-0 transition-colors"
+          >
+            + Wire Kafka Backbone
+          </button>
+          <button
+            onClick={() => onSendVoiceCommand?.("Simulate chaos outage: kill the primary PostgreSQL cluster.")}
+            className="px-2 py-1 bg-[#FEE2E2] hover:bg-[#FECACA] border border-[#DC2626] text-[#DC2626] font-bold shrink-0 transition-colors"
+          >
+            ⚡ Kill PostgreSQL (Chaos)
+          </button>
+          <button
+            onClick={() => onSendVoiceCommand?.("Switch this whole architecture to global multi-region edge on Cloudflare Workers.")}
+            className="px-2 py-1 bg-[#E8F5EE] hover:bg-[#D1EFE0] border border-[#008A4B] text-[#008A4B] font-bold shrink-0 transition-colors"
+          >
+            🌐 Migrate to Edge
+          </button>
+        </div>
+
+        {/* Direct Text-to-Voice Command Input */}
+        <form onSubmit={handleSendCommand} className="flex items-center gap-2 w-96 shrink-0">
+          <input
+            type="text"
+            value={commandInput}
+            onChange={(e) => setCommandInput(e.target.value)}
+            placeholder="Type architecture prompt or speak in any language..."
+            className="flex-1 px-3 py-1.5 bg-[#F4F3EF] border border-[#111111] text-xs font-mono text-[#111111] focus:outline-none focus:border-[#FF4F00]"
+          />
+          <button
+            type="submit"
+            className="px-3 py-1.5 bg-[#111111] text-[#FFFFFF] hover:bg-[#FF4F00] border border-[#111111] font-bold text-xs uppercase transition-colors"
+          >
+            <Send className="w-3.5 h-3.5" />
+          </button>
+        </form>
+      </div>
+
       {/* Manual Mermaid Spec Drawer */}
       {isCodeDrawerOpen && (
-        <div className="no-pan absolute bottom-4 right-4 z-40 w-[500px] max-w-[90vw] bg-zinc-900/90 border border-zinc-700 rounded-2xl shadow-2xl p-4 backdrop-blur-md animate-slide-up">
-          <div className="flex items-center justify-between mb-2.5">
-            <div className="flex items-center gap-2 text-xs font-mono text-zinc-300 font-semibold">
-              <Eye className="w-4 h-4 text-cyan-400" />
-              <span>Mermaid Architecture Spec</span>
+        <div className="no-pan absolute bottom-16 right-4 z-40 w-[520px] max-w-[90vw] bg-[#FFFFFF] border-2 border-[#111111] shadow-cad-lg p-4 font-mono animate-slide-up">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase">
+              <Eye className="w-4 h-4 text-[#FF4F00]" />
+              <span>Mermaid Architecture Spec Editor</span>
             </div>
             <button
               onClick={handleApplyEdit}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-mono font-bold text-xs transition-colors"
+              className="px-3 py-1 bg-[#FF4F00] hover:bg-[#e04500] text-[#FFFFFF] font-bold text-xs uppercase shadow-cad-sm transition-colors"
             >
-              <Check className="w-3.5 h-3.5" />
-              <span>Render Spec</span>
+              Re-render Spec
             </button>
           </div>
           <textarea
             value={editableCode}
             onChange={(e) => setEditableCode(e.target.value)}
-            rows={11}
-            className="w-full bg-zinc-950/90 border border-zinc-800 rounded-xl p-3 font-mono text-xs text-zinc-200 focus:outline-none focus:border-cyan-500 resize-none shadow-inner"
+            rows={10}
+            className="w-full bg-[#F4F3EF] border border-[#111111] p-3 text-xs text-[#111111] font-mono focus:outline-none focus:border-[#FF4F00] resize-none"
             placeholder="Enter Mermaid diagram code..."
           />
         </div>
