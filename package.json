@@ -1,0 +1,20 @@
+{
+  "name": "cadence-monorepo",
+  "version": "1.0.0",
+  "description": "Cadence — Autonomous Real-Time Voice Systems Architect",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "dev": "concurrently -n \"server,client\" -c \"magenta,cyan\" \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "start": "concurrently -n \"server,client\" -c \"magenta,cyan\" \"cd server && npm start\" \"cd client && npm run preview\"",
+    "build": "cd client && npm run build",
+    "test:server": "cd server && npm test",
+    "test:client": "node client/test/mermaidParser.test.js && node client/test/audioPcm.test.js",
+    "test": "npm run test:server && npm run test:client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
