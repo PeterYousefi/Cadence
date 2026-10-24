@@ -89,7 +89,7 @@ export function TelemetryRail({
   );
 
   return (
-    <aside className="w-[35%] min-w-[380px] max-w-[480px] h-full flex flex-col gap-2.5 p-3.5 bg-[#F4F3EF] border-r-2 border-[#111111] select-none overflow-hidden z-20 font-mono text-xs">
+    <aside className="w-[35%] min-w-[380px] max-w-[480px] h-full flex flex-col gap-2.5 p-3.5 bg-[#F4F3EF] border-r-2 border-[#111111] select-none overflow-y-auto z-20 font-mono text-xs">
       
       {/* 1. Principal AI Advisor Avatar (Higgs Avatar) with 5-Persona Carousel */}
       <PrincipalAvatar

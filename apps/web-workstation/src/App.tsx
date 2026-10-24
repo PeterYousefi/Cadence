@@ -32,7 +32,7 @@ export function App() {
   const [sessionSeconds, setSessionSeconds] = useState<number>(0);
   const [micRms, setMicRms] = useState<number>(0);
   const [audioChunksRx, setAudioChunksRx] = useState<number>(0);
-  const [selectedVoice, setSelectedVoice] = useState<string>('chloe');
+  const [selectedVoice, setSelectedVoice] = useState<string>('marcus');
 
   // Diagram & Tool Call State
   const [mermaidCode, setMermaidCode] = useState<string>(ARCHITECTURE_PRESETS[0].mermaid); // Default: Tokyo 7-Day Itinerary
