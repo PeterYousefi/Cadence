@@ -52,5 +52,13 @@ export async function mintEphemeralToken(expiresAfterSeconds = 3600) {
   }
 
   const data = await response.json();
-  return data;
+  const secretValue = data.value || data.client_secret?.value || data.client_secret;
+  return {
+    ...data,
+    value: secretValue,
+    client_secret: {
+      value: secretValue,
+      expires_at: data.expires_at || (Math.floor(Date.now() / 1000) + expiresAfterSeconds)
+    }
+  };
 }

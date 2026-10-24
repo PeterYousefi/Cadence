@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { sanitizeMermaidCode, enhanceMermaidStyling } from '../src/utils/mermaidParser.js';
+import { sanitizeMermaidCode, enhanceMermaidStyling } from '../src/utils/mermaidParser.ts';
 
 function testMermaidSanitizer() {
   // Test 1: Strips markdown code fences

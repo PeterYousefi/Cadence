@@ -28,7 +28,7 @@ export async function fetchEphemeralToken(): Promise<EphemeralSessionResult> {
   }
 
   const data = await response.json();
-  const secret = data.client_secret?.value || data.client_secret;
+  const secret = data.value || data.client_secret?.value || (typeof data.client_secret === 'string' ? data.client_secret : null);
 
   if (!secret) {
     throw new Error('Backend response did not contain a valid ephemeral client secret.');
@@ -36,7 +36,7 @@ export async function fetchEphemeralToken(): Promise<EphemeralSessionResult> {
 
   return {
     secret,
-    expiresAt: data.client_secret?.expires_at || null,
+    expiresAt: data.expires_at || data.client_secret?.expires_at || null,
     isMock: Boolean(data.mode === 'mock' || secret.startsWith('bai-eph-simulated'))
   };
 }

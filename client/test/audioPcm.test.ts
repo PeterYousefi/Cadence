@@ -5,7 +5,7 @@ import {
   downsampleBuffer,
   arrayBufferToBase64,
   base64ToArrayBuffer
-} from '../src/utils/audioPcm.js';
+} from '../src/utils/audioPcm.ts';
 
 function testAudioPcm() {
   // Test 1: Float32 <-> PCM16 round trip
