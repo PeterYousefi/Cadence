@@ -1,21 +1,32 @@
-import { pcm16ToFloat32, base64ToArrayBuffer } from '../utils/audioPcm.js';
-import { AUDIO_CONFIG } from '../constants/cadence.js';
+import { pcm16ToFloat32, base64ToArrayBuffer } from '../utils/audioPcm';
+import { AUDIO_CONFIG } from '../constants/cadence';
+import { AudioVisualizerSource } from '../types/cadence';
 
-export class AudioPlayer {
-  constructor(options = {}) {
+export interface AudioPlayerOptions {
+  sampleRate?: number;
+  onInterrupt?: () => void;
+  onStateChange?: (isPlaying: boolean) => void;
+}
+
+export class AudioPlayer implements AudioVisualizerSource {
+  private sampleRate: number;
+  private audioCtx: AudioContext | null = null;
+  private analyser: AnalyserNode | null = null;
+  private nextPlayTime: number = 0;
+  private activeSources: Set<AudioBufferSourceNode> = new Set();
+  public isPlaying: boolean = false;
+  private onInterrupt?: () => void;
+  private onStateChange?: (isPlaying: boolean) => void;
+
+  constructor(options: AudioPlayerOptions = {}) {
     this.sampleRate = options.sampleRate || AUDIO_CONFIG.SAMPLE_RATE;
-    this.audioCtx = null;
-    this.analyser = null;
-    this.nextPlayTime = 0;
-    this.activeSources = new Set();
-    this.isPlaying = false;
-    this.onInterrupt = options.onInterrupt || null;
-    this.onStateChange = options.onStateChange || null;
+    this.onInterrupt = options.onInterrupt;
+    this.onStateChange = options.onStateChange;
   }
 
-  ensureContext() {
+  public ensureContext(): void {
     if (!this.audioCtx || this.audioCtx.state === 'closed') {
-      const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+      const AudioCtxClass = window.AudioContext || (window as any).webkitAudioContext;
       this.audioCtx = new AudioCtxClass({ sampleRate: this.sampleRate });
       this.analyser = this.audioCtx.createAnalyser();
       this.analyser.fftSize = 512;
@@ -27,12 +38,9 @@ export class AudioPlayer {
     }
   }
 
-  /**
-   * Queue and gaplessly schedule a delta chunk of PCM 16-bit audio.
-   * @param {string | ArrayBuffer} rawAudio Base64-encoded PCM 16-bit or ArrayBuffer
-   */
-  queueAudioDelta(rawAudio) {
+  public queueAudioDelta(rawAudio: string | ArrayBuffer): void {
     this.ensureContext();
+    if (!this.audioCtx || !this.analyser) return;
 
     const pcmBuffer = typeof rawAudio === 'string' ? base64ToArrayBuffer(rawAudio) : rawAudio;
     const float32 = pcm16ToFloat32(pcmBuffer);
@@ -51,7 +59,6 @@ export class AudioPlayer {
     source.connect(this.analyser);
 
     const currentTime = this.audioCtx.currentTime;
-    // Schedule ahead for seamless gapless playback
     if (this.nextPlayTime < currentTime) {
       this.nextPlayTime = currentTime + 0.02; // 20ms lead jitter buffer
     }
@@ -70,16 +77,13 @@ export class AudioPlayer {
     };
   }
 
-  /**
-   * Flushes all active audio nodes on user speech barge-in.
-   */
-  flush() {
+  public flush(): void {
     for (const source of this.activeSources) {
       try {
         source.stop();
         source.disconnect();
       } catch {
-        // Node might have naturally ended
+        // Node may already be stopped
       }
     }
     this.activeSources.clear();
@@ -94,7 +98,7 @@ export class AudioPlayer {
     }
   }
 
-  updatePlayingState(playing) {
+  private updatePlayingState(playing: boolean): void {
     if (this.isPlaying !== playing) {
       this.isPlaying = playing;
       if (this.onStateChange) {
@@ -103,19 +107,19 @@ export class AudioPlayer {
     }
   }
 
-  getFrequencyData(targetArray) {
-    if (this.analyser) {
-      this.analyser.getByteFrequencyData(targetArray);
-    }
-  }
-
-  getTimeDomainData(targetArray) {
+  public getTimeDomainData(targetArray: Uint8Array): void {
     if (this.analyser) {
       this.analyser.getByteTimeDomainData(targetArray);
     }
   }
 
-  close() {
+  public getFrequencyData(targetArray: Uint8Array): void {
+    if (this.analyser) {
+      this.analyser.getByteFrequencyData(targetArray);
+    }
+  }
+
+  public close(): void {
     this.flush();
     if (this.audioCtx && this.audioCtx.state !== 'closed') {
       this.audioCtx.close();
