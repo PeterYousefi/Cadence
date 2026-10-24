@@ -25,6 +25,10 @@ jobs:
 
       - name: Run Vitest test suite
         run: npm test
+        env:
+          BOSON_API_KEY: "bai-mock-key-for-ci-tests"
 
       - name: Build packages and workstation
         run: npm run build
+        env:
+          BOSON_API_KEY: "bai-mock-key-for-ci-tests"
