@@ -1,61 +1,70 @@
 import React from 'react';
-import { Network, Sparkles, AudioWaveform, HelpCircle, Layers } from 'lucide-react';
+import { Award, Flame, FileCode, Cpu, ShieldCheck } from 'lucide-react';
 
 interface WorkstationHeaderProps {
   isConnected: boolean;
-  onOpenHelp?: () => void;
+  onOpenRubric: () => void;
+  onOpenTtsNarrator: () => void;
+  onOpenTerraform: () => void;
 }
 
-export function WorkstationHeader({ isConnected, onOpenHelp }: WorkstationHeaderProps) {
+export function WorkstationHeader({
+  isConnected,
+  onOpenRubric,
+  onOpenTtsNarrator,
+  onOpenTerraform
+}: WorkstationHeaderProps) {
   return (
-    <header className="h-14 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md flex items-center justify-between px-5 select-none z-30">
-      {/* Brand & Workstation Status */}
+    <header className="h-14 border-b-2 border-[#111111] bg-[#FFFFFF] flex items-center justify-between px-5 select-none z-30 font-mono">
+      {/* Brand & System Blueprint Identity */}
       <div className="flex items-center gap-3">
-        <div className="relative flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 via-violet-600 to-pink-500 p-0.5 shadow-[0_0_15px_rgba(6,182,212,0.4)]">
-          <div className="w-full h-full bg-zinc-950 rounded-[10px] flex items-center justify-center">
-            <Network className="w-4 h-4 text-cyan-400" />
-          </div>
-          <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-              isConnected ? 'bg-emerald-400' : 'bg-zinc-600'
-            }`} />
-            <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
-              isConnected ? 'bg-emerald-500' : 'bg-zinc-700'
-            }`} />
-          </span>
+        <div className="flex items-center justify-center w-8 h-8 bg-[#111111] text-[#FFFFFF] font-bold font-sans shadow-cad-sm text-sm">
+          C
         </div>
 
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="font-mono text-sm font-bold tracking-wider text-zinc-100 uppercase">
-              Cadence <span className="text-zinc-500">//</span> <span className="bg-gradient-to-r from-cyan-400 via-violet-400 to-pink-400 bg-clip-text text-transparent">Boson AI Systems Architect</span>
+            <h1 className="font-sans text-sm font-bold tracking-wider text-[#111111] uppercase">
+              CADENCE <span className="text-[#FF4F00]">//</span> BOSON AI MULTI-MODEL WORKSTATION
             </h1>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-cyan-950/50 border border-cyan-500/30 text-cyan-300 font-semibold">
-              REACT + TS
+            <span className="text-[9px] font-bold px-1.5 py-0.2 bg-[#FF4F00] text-[#FFFFFF] uppercase">
+              3-MODEL ENGINE
             </span>
           </div>
-          <p className="text-[10px] font-mono text-zinc-500">
-            higgs-realtime · Sub-Second Speech-to-Speech · Reactive Mermaid Canvas
+          <p className="text-[10px] text-[#767676]">
+            higgs-realtime · higgs-avatar · higgs-tts-3 · Swiss CAD Architecture
           </p>
         </div>
       </div>
 
-      {/* Badges & Actions */}
-      <div className="flex items-center gap-3">
-        <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900/80 border border-zinc-800 text-[11px] font-mono text-zinc-400 backdrop-blur-md">
-          <AudioWaveform className="w-3.5 h-3.5 text-cyan-400" />
-          <span>Full-Duplex VAD (300ms)</span>
-        </div>
+      {/* Hardware Action Buttons */}
+      <div className="flex items-center gap-2 text-xs">
+        {/* Judge Rubric QA Button */}
+        <button
+          onClick={onOpenRubric}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FFFFFF] hover:bg-[#F4F3EF] border border-[#111111] font-bold uppercase tracking-wider text-[11px] shadow-cad-sm active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
+        >
+          <Award className="w-3.5 h-3.5 text-[#008A4B]" />
+          <span>[JUDGE RUBRIC & LIVE QA // 100% READY]</span>
+        </button>
 
-        {onOpenHelp && (
-          <button
-            onClick={onOpenHelp}
-            className="flex items-center gap-1.5 text-xs font-mono text-zinc-400 hover:text-white px-3 py-1.5 rounded-xl hover:bg-zinc-800/80 transition-colors border border-transparent hover:border-zinc-700"
-          >
-            <HelpCircle className="w-4 h-4 text-zinc-400" />
-            <span className="hidden sm:inline">Guide</span>
-          </button>
-        )}
+        {/* Higgs TTS 3 Expressive Incident Narrator Button */}
+        <button
+          onClick={onOpenTtsNarrator}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FFFFFF] hover:bg-[#F4F3EF] border border-[#111111] font-bold uppercase tracking-wider text-[11px] shadow-cad-sm active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
+        >
+          <Flame className="w-3.5 h-3.5 text-[#FF4F00]" />
+          <span>[CHAOS POST-MORTEM & BRIEFING]</span>
+        </button>
+
+        {/* Export Terraform Drawer Button */}
+        <button
+          onClick={onOpenTerraform}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111111] text-[#FFFFFF] hover:bg-[#222222] font-bold uppercase tracking-wider text-[11px] shadow-cad-sm active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
+        >
+          <FileCode className="w-3.5 h-3.5 text-[#FF4F00]" />
+          <span>[EXPORT TERRAFORM]</span>
+        </button>
       </div>
     </header>
   );
