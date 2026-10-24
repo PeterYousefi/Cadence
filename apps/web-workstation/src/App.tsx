@@ -29,6 +29,8 @@ export function App() {
   const [bargeInDurationMs, setBargeInDurationMs] = useState<number>(110);
   const [latencyMs, setLatencyMs] = useState<number>(138);
   const [sessionSeconds, setSessionSeconds] = useState<number>(0);
+  const [micRms, setMicRms] = useState<number>(0);
+  const [audioChunksRx, setAudioChunksRx] = useState<number>(0);
 
   // Diagram & Tool Call State
   const [mermaidCode, setMermaidCode] = useState<string>(ARCHITECTURE_PRESETS[0].mermaid); // Default: Kafka Streaming
@@ -186,6 +188,8 @@ export function App() {
       }
       playDisconnectCue();
       setWsStatus('DISCONNECTED');
+      setMicRms(0);
+      setAudioChunksRx(0);
       addToast('Cadence workstation disconnected', 'info');
       return;
     }
@@ -194,12 +198,13 @@ export function App() {
       setWsStatus('CONNECTING');
       addToast('Acquiring ephemeral token from Cadence gateway...', 'info');
 
-      const { secret, isMock } = await fetchEphemeralToken();
-      if (isMock) {
-        addToast('Connected in simulated sandbox (BOSON_API_KEY can be provided in .env)', 'warning', 6000);
-      } else {
-        addToast('Ephemeral token minted. Connecting to Boson Realtime API...', 'success');
+      // Ensure AudioContext is resumed synchronously inside user click gesture
+      if (audioPlayerRef.current) {
+        await audioPlayerRef.current.resume();
       }
+
+      const { token } = await fetchEphemeralToken();
+      addToast('Ephemeral token minted. Connecting to Boson Realtime API...', 'success');
 
       const client = new BosonWebSocketClient({
         onOpen: () => {
@@ -211,15 +216,23 @@ export function App() {
         onClose: () => {
           setWsStatus('DISCONNECTED');
           setIsRecording(false);
+          setMicRms(0);
         },
         onError: () => {
           setWsStatus('ERROR');
           addToast('WebSocket connection error. Verify network & token.', 'error');
         },
+        onErrorEvent: (errorMessage: string) => {
+          addToast(`Boson Realtime Error: ${errorMessage}`, 'error', 9000);
+          addLog({ role: 'system', text: `[REMOTE ERROR] ${errorMessage}` });
+        },
         onAudioDelta: (base64Audio) => {
           if (audioPlayerRef.current) {
             audioPlayerRef.current.queueAudioDelta(base64Audio);
           }
+        },
+        onAudioChunksCount: (count) => {
+          setAudioChunksRx(count);
         },
         onSpeechStarted: () => {
           vadBenchmarkRef.current.markSpeechStarted();
@@ -246,7 +259,7 @@ export function App() {
       });
 
       socketClientRef.current = client;
-      client.connect(secret);
+      client.connect(token);
 
       const latencyInterval = setInterval(() => {
         setLatencyMs(Math.floor(130 + Math.random() * 25));
@@ -268,6 +281,9 @@ export function App() {
           if (activeSocket) {
             activeSocket.appendAudioBuffer(base64Chunk);
           }
+        },
+        onRmsChange: (rms) => {
+          setMicRms(rms);
         }
       });
       await recorder.start();
@@ -277,6 +293,16 @@ export function App() {
       console.error('Microphone error:', err);
       addToast(`Microphone error: ${err?.message}`, 'error');
       setIsRecording(false);
+    }
+  };
+
+  // Manual Force Turn / Reply Handler
+  const handleForceCommitTurn = () => {
+    if (socketClientRef.current && wsStatus === 'CONNECTED') {
+      socketClientRef.current.commitTurnAndForceReply();
+      addToast('Force committed audio turn -> prompted Boson AI reply', 'info');
+    } else {
+      addToast('Workstation not connected', 'warning');
     }
   };
 
@@ -333,15 +359,8 @@ export function App() {
   const handleSendVoiceCommand = (text: string) => {
     addLog({ role: 'user', text });
     if (socketClientRef.current && wsStatus === 'CONNECTED') {
-      socketClientRef.current.send({
-        type: 'conversation.item.create',
-        item: {
-          type: 'message',
-          role: 'user',
-          content: [{ type: 'input_text', text }]
-        }
-      });
-      socketClientRef.current.send({ type: 'response.create' });
+      socketClientRef.current.sendUserTextMessage(text);
+      addToast(`Dispatched command to Boson: "${text.slice(0, 35)}..."`, 'info');
     } else {
       addToast(`Workstation offline. Initializing local execution for: "${text}"`, 'info');
     }
@@ -379,6 +398,8 @@ export function App() {
           bargeInDurationMs={bargeInDurationMs}
           latencyMs={latencyMs}
           sessionDurationSec={sessionSeconds}
+          micRms={micRms}
+          audioChunksRx={audioChunksRx}
           micSource={audioRecorderRef.current}
           speakerSource={audioPlayerRef.current}
           logs={logs}
@@ -386,6 +407,7 @@ export function App() {
           onClearLogs={() => setLogs([])}
           onToggleConnection={handleToggleConnection}
           onToggleMic={handleToggleMic}
+          onForceCommitTurn={handleForceCommitTurn}
           onSelectPreset={handleSelectPreset}
           onInjectChaos={handleInjectChaosAction}
         />
