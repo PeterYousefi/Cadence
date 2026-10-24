@@ -42,6 +42,7 @@ interface TelemetryRailProps {
   speakerSource: AudioVisualizerSource | null;
   logs: ActivityLogItem[];
   activePresetId?: string;
+  selectedPersona?: AvatarPersona;
   onClearLogs: () => void;
   onToggleConnection: () => void;
   onToggleMic: () => void;
@@ -66,6 +67,7 @@ export function TelemetryRail({
   speakerSource,
   logs,
   activePresetId,
+  selectedPersona,
   onClearLogs,
   onToggleConnection,
   onToggleMic,
@@ -96,6 +98,7 @@ export function TelemetryRail({
         isSpeaking={isSpeaking}
         isDuplexActive={isConnected}
         audioSource={speakerSource}
+        selectedPersona={selectedPersona}
         onSelectAvatar={onSelectAvatar}
       />
 

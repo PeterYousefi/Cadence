@@ -1,88 +1,139 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Check } from 'lucide-react';
+import { Upload } from 'lucide-react';
 
-export interface AvatarPersona {
+export interface Persona {
   id: string;
   name: string;
   role: string;
   voice: string;
-  avatarUrl: string;
+  image: string;
+  avatarUrl?: string;
 }
 
-export const AVATAR_PERSONAS: AvatarPersona[] = [
+export type AvatarPersona = Persona;
+
+export const PERSONAS: Persona[] = [
   {
     id: 'marcus',
     name: 'Marcus',
     role: 'Lead Architect',
     voice: 'marcus',
-    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80'
+    image: '/avatars/marcus.jpg',
+    avatarUrl: '/avatars/marcus.jpg'
   },
   {
     id: 'chloe',
     name: 'Chloe',
-    role: 'Event Director',
+    role: 'UX Specialist',
     voice: 'chloe',
-    avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80'
+    image: '/avatars/chloe.jpg',
+    avatarUrl: '/avatars/chloe.jpg'
   },
   {
     id: 'oliver',
     name: 'Oliver',
-    role: 'Travel Planner',
+    role: 'Backend Engineer',
     voice: 'oliver',
-    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80'
+    image: '/avatars/oliver.jpg',
+    avatarUrl: '/avatars/oliver.jpg'
   },
   {
     id: 'sophia',
     name: 'Sophia',
-    role: 'Life Strategist',
+    role: 'Data Scientist',
     voice: 'sophia',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80'
+    image: '/avatars/sophia.jpg',
+    avatarUrl: '/avatars/sophia.jpg'
   },
   {
     id: 'liam',
     name: 'Liam',
-    role: 'Startup Mentor',
+    role: 'DevOps Lead',
     voice: 'liam',
-    avatarUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=600&q=80'
+    image: '/avatars/liam.jpg',
+    avatarUrl: '/avatars/liam.jpg'
   }
 ];
+
+export const AVATAR_PERSONAS = PERSONAS;
 
 interface PrincipalAvatarProps {
   isSpeaking: boolean;
   isDuplexActive: boolean;
-  audioSource?: { getTimeDomainData: (target: Uint8Array) => void } | null;
-  onSelectAvatar?: (persona: AvatarPersona) => void;
+  audioSource?: {
+    getTimeDomainData: (target: Uint8Array) => void;
+    getFrequencyData?: (target: Uint8Array) => void;
+  } | null;
+  selectedPersona?: Persona;
+  onSelectAvatar?: (persona: Persona) => void;
 }
 
-export function PrincipalAvatar({ isSpeaking, isDuplexActive, audioSource, onSelectAvatar }: PrincipalAvatarProps) {
-  const [selectedAvatar, setSelectedAvatar] = useState<AvatarPersona>(AVATAR_PERSONAS[0]);
+export function PrincipalAvatar({
+  isSpeaking,
+  isDuplexActive,
+  audioSource,
+  selectedPersona: externalSelectedPersona,
+  onSelectAvatar
+}: PrincipalAvatarProps) {
+  const [selectedPersona, setSelectedPersona] = useState<Persona>(
+    externalSelectedPersona || PERSONAS[0]
+  );
   const [customPortraitUrl, setCustomPortraitUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [mouthOpen, setMouthOpen] = useState(0);
+  const [audioVolume, setAudioVolume] = useState<number>(0);
+  const [mouthOpen, setMouthOpen] = useState<number>(0);
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const animFrameRef = useRef<number | null>(null);
 
-  // 60fps WebAudio Lip-Sync Reactive Animator during Realtime voice turns
+  // Sync internal selectedPersona if externally passed
   useEffect(() => {
-    const dataArray = new Uint8Array(128);
+    if (externalSelectedPersona) {
+      setSelectedPersona(externalSelectedPersona);
+    }
+  }, [externalSelectedPersona]);
 
-    const updateMouth = () => {
+  // High-performance 60fps WebAudio Lip-Sync & Volume Sampler
+  useEffect(() => {
+    const freqData = new Uint8Array(64);
+    const timeData = new Uint8Array(64);
+
+    const sampleAudio = () => {
       if (isSpeaking && audioSource) {
-        audioSource.getTimeDomainData(dataArray);
-        let sum = 0;
-        for (let i = 0; i < dataArray.length; i++) {
-          sum += Math.abs(dataArray[i] - 128);
+        // 1. Sample frequency data for amplitude scaling & dynamic glow
+        if (audioSource.getFrequencyData) {
+          audioSource.getFrequencyData(freqData);
         }
-        const avg = sum / dataArray.length;
-        const aperture = Math.min(1, avg / 35);
-        setMouthOpen(aperture);
+        // 2. Sample time domain data for instantaneous mouth movement
+        audioSource.getTimeDomainData(timeData);
+
+        // Average vocal frequency bins (fundamental voice spectrum)
+        let freqSum = 0;
+        for (let i = 0; i < 32; i++) {
+          freqSum += freqData[i];
+        }
+        const freqAvg = freqSum / 32; // 0..255
+        const normVol = Math.min(1, Math.max(0, freqAvg / 115));
+
+        // Time domain RMS deviation for aperture
+        let timeSum = 0;
+        for (let i = 0; i < timeData.length; i++) {
+          timeSum += Math.abs(timeData[i] - 128);
+        }
+        const timeAvg = timeSum / timeData.length;
+        const normAperture = Math.min(1, Math.max(0, timeAvg / 28));
+
+        setAudioVolume(normVol);
+        setMouthOpen(Math.max(normAperture, normVol * 0.8));
       } else {
+        // Smooth return to static resting state
+        setAudioVolume(0);
         setMouthOpen(0);
       }
-      animFrameRef.current = requestAnimationFrame(updateMouth);
+      animFrameRef.current = requestAnimationFrame(sampleAudio);
     };
 
-    updateMouth();
+    sampleAudio();
 
     return () => {
       if (animFrameRef.current !== null) {
@@ -91,8 +142,8 @@ export function PrincipalAvatar({ isSpeaking, isDuplexActive, audioSource, onSel
     };
   }, [isSpeaking, audioSource]);
 
-  const handleSelectAvatar = (persona: AvatarPersona) => {
-    setSelectedAvatar(persona);
+  const handleSelectPersona = (persona: Persona) => {
+    setSelectedPersona(persona);
     setCustomPortraitUrl(null);
     if (onSelectAvatar) {
       onSelectAvatar(persona);
@@ -111,7 +162,8 @@ export function PrincipalAvatar({ isSpeaking, isDuplexActive, audioSource, onSel
       setIsUploading(false);
       if (onSelectAvatar) {
         onSelectAvatar({
-          ...selectedAvatar,
+          ...selectedPersona,
+          image: result,
           avatarUrl: result
         });
       }
@@ -119,11 +171,11 @@ export function PrincipalAvatar({ isSpeaking, isDuplexActive, audioSource, onSel
     reader.readAsDataURL(file);
   };
 
-  const activeImageSource = customPortraitUrl || selectedAvatar.avatarUrl;
+  const activeImageSource = customPortraitUrl || selectedPersona.image;
 
   return (
     <div className="border border-[#111111] bg-[#FFFFFF] shadow-cad p-3 text-xs font-mono">
-      {/* Module Title */}
+      {/* Module Title & Dynamic Persona Tag */}
       <div className="flex items-center justify-between border-b border-[#111111] pb-2 mb-2">
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 bg-[#FF4F00] inline-block" />
@@ -132,37 +184,38 @@ export function PrincipalAvatar({ isSpeaking, isDuplexActive, audioSource, onSel
           </span>
         </div>
         <div className="flex items-center gap-1 text-[10px] bg-[#F4F3EF] border border-[#111111] px-1.5 py-0.5">
-          <span className="font-bold uppercase text-[#FF4F00]">{selectedAvatar.name}</span>
-          <span className="text-[#767676]">({selectedAvatar.voice})</span>
+          <span className="font-bold uppercase text-[#FF4F00]">{selectedPersona.name.toUpperCase()}</span>
+          <span className="text-[#767676]">({selectedPersona.voice})</span>
         </div>
       </div>
 
-      {/* 5-Avatar 1-Click Carousel */}
+      {/* 5-Avatar 1-Click Persona Carousel */}
       <div className="mb-2.5">
         <div className="flex items-center justify-between text-[9px] text-[#767676] mb-1 font-bold uppercase tracking-wider">
           <span>SELECT ADVISOR PERSONA:</span>
-          <span className="text-[#008A4B]">{selectedAvatar.role}</span>
+          <span className="text-[#008A4B]">{selectedPersona.role}</span>
         </div>
         <div className="grid grid-cols-5 gap-1.5 p-1 bg-[#F4F3EF] border border-[#111111]">
-          {AVATAR_PERSONAS.map((p) => {
-            const isSelected = !customPortraitUrl && selectedAvatar.id === p.id;
+          {PERSONAS.map((p) => {
+            const isSelected = !customPortraitUrl && selectedPersona.id === p.id;
             return (
               <button
                 key={p.id}
-                onClick={() => handleSelectAvatar(p)}
+                onClick={() => handleSelectPersona(p)}
                 className={`relative flex flex-col items-center gap-0.5 p-1 transition-all ${
                   isSelected
-                    ? 'bg-[#FFFFFF] border border-[#FF4F00] shadow-cad-sm scale-105'
-                    : 'border border-transparent hover:border-[#111111] opacity-75 hover:opacity-100'
+                    ? 'bg-[#FFFFFF] border-2 border-[#FF4F00] shadow-cad-sm scale-105'
+                    : 'border border-[#111111]/30 hover:border-[#111111] bg-[#FFFFFF]/60 hover:bg-[#FFFFFF] opacity-80 hover:opacity-100'
                 }`}
                 title={`${p.name} — ${p.role} (Voice: ${p.voice})`}
               >
                 <div className="w-8 h-8 rounded-full overflow-hidden border border-[#111111] bg-[#E2E0D8]">
-                  <img src={p.avatarUrl} alt={p.name} className="w-full h-full object-cover" />
+                  <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
                 </div>
                 <span className="text-[8px] font-bold text-[#111111] truncate max-w-[44px]">{p.name}</span>
+                <span className="text-[7px] text-[#767676] truncate max-w-[44px]">{p.voice}</span>
                 {isSelected && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#FF4F00] rounded-full border border-[#FFFFFF]" />
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[#FF4F00] rounded-full border border-[#FFFFFF]" />
                 )}
               </button>
             );
@@ -170,47 +223,75 @@ export function PrincipalAvatar({ isSpeaking, isDuplexActive, audioSource, onSel
         </div>
       </div>
 
-      {/* Main Avatar Viewport: Clean architectural aspect ratio with proper padding & uncropped fit */}
-      <div className="relative w-full h-64 bg-[#F4F3EF] border-2 border-[#111111] flex items-center justify-center p-4">
+      {/* Main Avatar Viewport: Fixed aspect ratio, uncropped scaling, and audio-reactive lip-sync */}
+      <div className="relative w-full h-64 bg-[#F4F3EF] border-2 border-[#111111] flex items-center justify-center p-4 overflow-hidden">
         {/* Background blueprint grid */}
         <div className="absolute inset-0 blueprint-dots pointer-events-none opacity-40" />
 
-        {/* Uncropped, scaled full-face portrait image */}
-        <div className="relative w-full h-full flex items-center justify-center">
-          <img
-            src={activeImageSource}
-            alt={selectedAvatar.name}
+        {/* Audio Reactive Container: scale pulse, subtle bobbing, and glowing border */}
+        <div
+          className="relative w-full h-full flex items-center justify-center transition-transform duration-75 ease-out"
+          style={{
+            transform: isSpeaking
+              ? `scale(${1 + audioVolume * 0.035}) translateY(-${audioVolume * 3}px)`
+              : 'scale(1) translateY(0px)'
+          }}
+        >
+          <div
+            className={`relative max-w-full max-h-[220px] rounded-sm transition-all duration-75 overflow-hidden flex items-center justify-center ${
+              isSpeaking ? 'border-2 border-[#FF4F00]' : 'border-2 border-transparent'
+            }`}
             style={{
-              objectFit: 'contain',
-              width: '100%',
-              height: '100%',
-              maxHeight: '220px'
+              boxShadow: isSpeaking
+                ? `0px 0px ${Math.round(8 + audioVolume * 16)}px rgba(255, 79, 0, ${0.45 + audioVolume * 0.45})`
+                : 'none'
             }}
-            className="rounded-sm contrast-110 drop-shadow-sm select-none"
-          />
-
-          {/* Lip-sync animated reactive mouth aperture during speech */}
-          {isSpeaking && (
-            <div
-              className="absolute bottom-6 w-10 bg-[#FF4F00] transition-all duration-75 rounded-full shadow-[0px_0px_8px_#FF4F00] pointer-events-none"
+          >
+            {/* Uncropped full portrait */}
+            <img
+              src={activeImageSource}
+              alt={selectedPersona.name}
               style={{
-                height: `${Math.max(4, mouthOpen * 16)}px`,
-                opacity: 0.9
+                objectFit: 'contain',
+                width: '100%',
+                height: '100%',
+                maxHeight: '220px'
               }}
+              className="contrast-110 drop-shadow-sm select-none"
             />
-          )}
+
+            {/* Lip-sync animated reactive mouth aperture during speech */}
+            {isSpeaking && (
+              <div
+                className="absolute bottom-5 left-1/2 -translate-x-1/2 w-8 bg-[#FF4F00] transition-all duration-75 rounded-full pointer-events-none"
+                style={{
+                  height: `${Math.max(3, mouthOpen * 14)}px`,
+                  opacity: 0.85 + audioVolume * 0.15,
+                  boxShadow: `0px 0px ${Math.round(4 + mouthOpen * 8)}px #FF4F00`
+                }}
+              />
+            )}
+          </div>
         </div>
 
         {/* Live Audio State Beacon */}
-        <div className="absolute bottom-2 left-2 flex items-center gap-1.5 text-[10px] bg-[#FFFFFF] border border-[#111111] px-1.5 py-0.5 shadow-sm">
-          <span className={`w-2 h-2 ${isSpeaking ? 'bg-[#FF4F00] animate-ping' : isDuplexActive ? 'bg-[#008A4B]' : 'bg-[#767676]'}`} />
+        <div className="absolute bottom-2 left-2 flex items-center gap-1.5 text-[10px] bg-[#FFFFFF] border border-[#111111] px-1.5 py-0.5 shadow-sm z-10">
+          <span
+            className={`w-2 h-2 ${
+              isSpeaking
+                ? 'bg-[#FF4F00] animate-ping'
+                : isDuplexActive
+                ? 'bg-[#008A4B]'
+                : 'bg-[#767676]'
+            }`}
+          />
           <span className="font-bold text-[9px]">
             {isSpeaking ? 'VOCALIZING' : isDuplexActive ? 'LIP-SYNC READY' : 'STANDBY'}
           </span>
         </div>
 
         {/* 60fps Frame Metric */}
-        <div className="absolute top-2 right-2 text-[9px] font-bold bg-[#FFFFFF]/90 px-1 border border-[#111111]">
+        <div className="absolute top-2 right-2 text-[9px] font-bold bg-[#FFFFFF]/90 px-1 border border-[#111111] z-10">
           60 FPS // MP4 SYNC
         </div>
       </div>
@@ -218,13 +299,21 @@ export function PrincipalAvatar({ isSpeaking, isDuplexActive, audioSource, onSel
       {/* Active Voice Status Badge Underneath Viewport */}
       <div className="mt-2 flex items-center justify-between px-2.5 py-1.5 bg-[#FFFFFF] border border-[#111111] text-[10px] font-mono">
         <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 bg-[#008A4B] animate-pulse" />
+          <span
+            className={`w-2 h-2 ${
+              isSpeaking ? 'bg-[#FF4F00] animate-ping' : 'bg-[#008A4B] animate-pulse'
+            }`}
+          />
           <span className="font-bold tracking-wider text-[#111111]">
-            ACTIVE VOICE: <span className="text-[#FF4F00] font-bold">{selectedAvatar.voice.toUpperCase()}</span> [HIGGS-REALTIME]
+            ACTIVE VOICE:{' '}
+            <span className="text-[#FF4F00] font-bold">
+              {selectedPersona.voice.toUpperCase()}
+            </span>{' '}
+            [HIGGS-REALTIME]
           </span>
         </div>
         <span className="text-[9px] text-[#767676] font-bold uppercase">
-          {selectedAvatar.role}
+          {selectedPersona.name.toUpperCase()} // {selectedPersona.role}
         </span>
       </div>
 

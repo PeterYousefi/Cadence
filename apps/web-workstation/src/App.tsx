@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { WorkstationHeader } from './components/WorkstationHeader';
 import { TelemetryRail } from './components/TelemetryRail';
-import { PrincipalAvatar, AvatarPersona } from './components/PrincipalAvatar';
+import { PrincipalAvatar, AvatarPersona, Persona, PERSONAS } from './components/PrincipalAvatar';
 import { ArchitectCanvas } from './components/ArchitectCanvas';
 import { JudgeRubricModal } from './components/JudgeRubricModal';
 import { HiggsTtsModal } from './components/HiggsTtsModal';
@@ -32,6 +32,7 @@ export function App() {
   const [sessionSeconds, setSessionSeconds] = useState<number>(0);
   const [micRms, setMicRms] = useState<number>(0);
   const [audioChunksRx, setAudioChunksRx] = useState<number>(0);
+  const [selectedPersona, setSelectedPersona] = useState<Persona>(PERSONAS[0]);
   const [selectedVoice, setSelectedVoice] = useState<string>('marcus');
 
   // Diagram & Tool Call State
@@ -347,7 +348,8 @@ export function App() {
   };
 
   // Avatar Persona & Voice Selection Handler
-  const handleSelectAvatar = (persona: AvatarPersona) => {
+  const handleSelectAvatar = (persona: Persona) => {
+    setSelectedPersona(persona);
     setSelectedVoice(persona.voice);
     addToast(`Advisor avatar switched to ${persona.name} (Voice: ${persona.voice})`, 'info');
     if (socketClientRef.current && wsStatus === 'CONNECTED') {
@@ -416,6 +418,7 @@ export function App() {
           speakerSource={audioPlayerRef.current}
           logs={logs}
           activePresetId={activePresetId}
+          selectedPersona={selectedPersona}
           onClearLogs={() => setLogs([])}
           onToggleConnection={handleToggleConnection}
           onToggleMic={handleToggleMic}
