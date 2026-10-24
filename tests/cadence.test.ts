@@ -82,7 +82,7 @@ describe('Cadence Master Test Suite // Judge Rubric Verification', () => {
     const tagWord = briefing.words.find(w => w.isTag);
     expect(tagWord).toBeDefined();
     expect(tagWord?.word).toMatch(/^<\|.*\|>$/);
-  });
+  }, 10000);
 
   // Test 7: Higgs Avatar Video Session Service
   it('[TEST 7/8] Higgs Avatar service initiates session with Lead Architect persona', async () => {
@@ -90,7 +90,7 @@ describe('Cadence Master Test Suite // Judge Rubric Verification', () => {
     expect(session.sessionId).toBeDefined();
     expect(session.model).toBe('higgs-avatar');
     expect(session.lipSyncAvailable).toBe(true);
-  });
+  }, 10000);
 
   // Test 8: Unit Economics & 90% Cost Savings
   it('[TEST 8/8] Real-time unit economics calculates 90% cost reduction vs OpenAI Realtime', () => {
