@@ -98,5 +98,39 @@ export const ARCHITECTURE_PRESETS: ArchitecturePreset[] = [
   style BosonWS fill:#4c1d95,stroke:#8b5cf6,stroke-width:3px,color:#fff
   style ToolExecutor fill:#be185d,stroke:#f472b6,stroke-width:2px,color:#fff
   style CanvasState fill:#0e7490,stroke:#22d3ee,stroke-width:2px,color:#fff`
+  },
+  {
+    id: 'auth-resilience',
+    title: 'Auth Resilience',
+    badge: 'Circuit Breaker',
+    color: '#ef4444',
+    description: 'Autonomous resolution of partitioned Auth service: Envoy circuit breaker trip, fallback JWKS validation, Transit Gateway route healing, and gradual half-open recovery.',
+    mermaid: `graph TD
+  subgraph Clients ["Client Traffic Tier"]
+    ClientApps["Web & Mobile Apps"] --> CloudflareWAF["Cloudflare WAF / Edge Anycast"]
+  end
+
+  subgraph GatewayMesh ["Envoy Ingress & Circuit Breaker Tier"]
+    CloudflareWAF --> EnvoyGateway["Envoy Gateway (Ingress)"]
+    EnvoyGateway -. "CB_AUTH [HALF-OPEN // 10% Canary]" .-> AuthService["Auth Microservice (us-east-1b)"]
+    EnvoyGateway --> FallbackAuth["Stateless JWKS JWT Fallback Engine"]
+  end
+
+  subgraph PartitionZone ["VPC Partition Zone (us-east-1b)"]
+    AuthService -. "503 Network Timeout" .- OIDCProvider["External OIDC / IdP"]
+    AuthService <--> RedisTokens[("Redis Token & Session Cache")]
+    TransitGateway["AWS Transit Gateway (Route Tables Reconciled)"] === AuthService
+  end
+
+  subgraph CoreServices ["Protected Upstream Workloads"]
+    EnvoyGateway --> OrderService["Order Fulfillment Service"]
+    EnvoyGateway --> PaymentService["Payment Processing Engine"]
+    OrderService --> PostgresPrimary[("PostgreSQL Multi-AZ Primary")]
+  end
+
+  style AuthService fill:#dc2626,stroke:#991b1b,stroke-width:2.5px,color:#fff
+  style FallbackAuth fill:#008A4B,stroke:#15803d,stroke-width:2.5px,color:#fff
+  style EnvoyGateway fill:#FF4F00,stroke:#c2410c,stroke-width:2.5px,color:#fff
+  style TransitGateway fill:#2563eb,stroke:#1d4ed8,stroke-width:2px,color:#fff`
   }
 ];
