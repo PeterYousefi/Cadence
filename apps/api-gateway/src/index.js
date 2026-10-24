@@ -1,5 +1,8 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import { config } from './config.js';
 import { healthRouter } from './routes/health.js';
 import { sessionRouter } from './routes/session.js';
@@ -7,6 +10,9 @@ import { ttsBriefingRouter } from './routes/ttsBriefing.js';
 import { avatarSpeakRouter } from './routes/avatarSpeak.js';
 import { diagnosticsRouter } from './routes/diagnostics.js';
 import { errorHandler } from './middleware/errorHandler.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -36,6 +42,28 @@ app.use('/api', sessionRouter);
 app.use('/api', ttsBriefingRouter);
 app.use('/api', avatarSpeakRouter);
 app.use('/api', diagnosticsRouter);
+
+// Serve static client build in production
+const clientDistCandidates = [
+  path.resolve(__dirname, '../../web-workstation/dist'),
+  path.resolve(process.cwd(), 'apps/web-workstation/dist'),
+  path.resolve(process.cwd(), 'dist'),
+  path.resolve(__dirname, '../public')
+];
+
+const clientDistPath = clientDistCandidates.find(p => fs.existsSync(p));
+
+if (clientDistPath) {
+  console.log(`[Cadence Gateway] Serving static client build from ${clientDistPath}`);
+  app.use(express.static(clientDistPath));
+
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+}
 
 // Fallback error handler
 app.use(errorHandler);

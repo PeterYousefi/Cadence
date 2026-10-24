@@ -18,6 +18,10 @@ dist-ssr
 .env.production
 .env.local
 
+# Deployment bundles & public builds
+*.zip
+apps/api-gateway/public/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
