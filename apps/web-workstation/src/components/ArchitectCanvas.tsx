@@ -313,6 +313,12 @@ export function ArchitectCanvas({
             + Add Redis Cache
           </button>
           <button
+            onClick={() => onSendVoiceCommand?.("Analyze auth service 503 outage caused by network partition. Check logs, verify circuit breaker status, route to local JWKS fallback, and gradually close circuit breaker once restored.")}
+            className="px-2 py-1 bg-[#FEF3C7] hover:bg-[#FDE68A] border border-[#D97706] text-[#B45309] font-bold shrink-0 transition-colors"
+          >
+            🛡️ Resolve Auth 503 (Circuit Breaker)
+          </button>
+          <button
             onClick={() => onSendVoiceCommand?.("Add an Apache Kafka event backbone with Schema Registry.")}
             className="px-2 py-1 bg-[#F4F3EF] hover:bg-[#EBEAE5] border border-[#111111] font-bold shrink-0 transition-colors"
           >

@@ -14,7 +14,7 @@ interface WordTimestamp {
 }
 
 export function HiggsTtsModal({ isOpen, onClose }: HiggsTtsModalProps) {
-  const [scenario, setScenario] = useState<'chaos-outage' | 'executive-pitch'>('chaos-outage');
+  const [scenario, setScenario] = useState<'auth-outage' | 'chaos-outage' | 'executive-pitch'>('auth-outage');
   const [script, setScript] = useState<string>('');
   const [words, setWords] = useState<WordTimestamp[]>([]);
   const [activeWordIndex, setActiveWordIndex] = useState<number>(-1);
@@ -107,26 +107,36 @@ export function HiggsTtsModal({ isOpen, onClose }: HiggsTtsModalProps) {
         </div>
 
         {/* Scenario Toggle */}
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-4 overflow-x-auto">
+          <button
+            onClick={() => { setScenario('auth-outage'); }}
+            className={`px-3 py-1.5 text-xs font-bold border border-[#111111] uppercase tracking-wider transition-all shrink-0 ${
+              scenario === 'auth-outage'
+                ? 'bg-[#FF4F00] text-[#FFFFFF] shadow-cad-sm'
+                : 'bg-[#F4F3EF] hover:bg-[#FFFFFF]'
+            }`}
+          >
+            [01 // Auth 503 Outage & Circuit Breaker]
+          </button>
           <button
             onClick={() => { setScenario('chaos-outage'); }}
-            className={`px-3 py-1.5 text-xs font-bold border border-[#111111] uppercase tracking-wider transition-all ${
+            className={`px-3 py-1.5 text-xs font-bold border border-[#111111] uppercase tracking-wider transition-all shrink-0 ${
               scenario === 'chaos-outage'
                 ? 'bg-[#FF4F00] text-[#FFFFFF] shadow-cad-sm'
                 : 'bg-[#F4F3EF] hover:bg-[#FFFFFF]'
             }`}
           >
-            [01 // Chaos Outage Post-Mortem]
+            [02 // Redis Chaos Outage]
           </button>
           <button
             onClick={() => { setScenario('executive-pitch'); }}
-            className={`px-3 py-1.5 text-xs font-bold border border-[#111111] uppercase tracking-wider transition-all ${
+            className={`px-3 py-1.5 text-xs font-bold border border-[#111111] uppercase tracking-wider transition-all shrink-0 ${
               scenario === 'executive-pitch'
                 ? 'bg-[#FF4F00] text-[#FFFFFF] shadow-cad-sm'
                 : 'bg-[#F4F3EF] hover:bg-[#FFFFFF]'
             }`}
           >
-            [02 // Executive Architecture Pitch]
+            [03 // Executive Architecture Pitch]
           </button>
         </div>
 
