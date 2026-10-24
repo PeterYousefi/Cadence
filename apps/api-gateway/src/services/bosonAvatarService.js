@@ -28,7 +28,8 @@ export async function createAvatarSpeechSession(options = {}) {
           model: 'higgs-avatar',
           prompt: options.script || 'Cadence Systems Architect briefing',
           input_image: portrait.startsWith('data:') ? portrait.split(',')[1] : portrait
-        })
+        }),
+        signal: AbortSignal.timeout(3500)
       });
 
       if (response.ok) {
