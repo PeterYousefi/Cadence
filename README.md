@@ -1,7 +1,7 @@
 <div align="center">
 
 # CADENCE
-### Autonomous Real-Time Voice Systems Architect
+### Autonomous Real-Time Voice Life & Event Planner
 
 [![Build & Test](https://github.com/PeterYousefi/Cadence/actions/workflows/ci.yml/badge.svg)](https://github.com/PeterYousefi/Cadence/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -11,7 +11,7 @@
 [![Multi-Model](https://img.shields.io/badge/Boson%20AI-Realtime%20%2B%20Avatar%20%2B%20TTS%203-008A4B.svg)](https://boson.ai)
 
 <p align="center">
-  <strong>Cadence</strong> pairs Boson AI's multi-model suite with a reactive, Swiss CAD architectural drafting canvas. Speak naturally in any language to interactively synthesize, rewire, stress-test, and export distributed cloud topologies in sub-second real time.
+  <strong>Cadence</strong> pairs Boson AI's multi-model suite with a reactive, Swiss CAD visual mind-mapping canvas. Speak naturally in any language to plan dream vacations, coordinate weddings, build startup roadmaps, or brainstorm life goals with instant visual timelines and sub-second full-duplex voice.
 </p>
 
 </div>
@@ -21,15 +21,15 @@
 ## 🖥️ Workstation Overview
 
 <div align="center">
-  <img src="docs/images/cadence-workstation-main.png" alt="Cadence Systems Architect Workstation" width="100%" style="border: 2px solid #111111; box-shadow: 6px 6px 0px #111111;" />
+  <img src="docs/images/cadence-workstation-main.png" alt="Cadence Visual Life & Event Planner Workstation" width="100%" style="border: 2px solid #111111; box-shadow: 6px 6px 0px #111111;" />
 </div>
 
 <br />
 
 The Cadence workstation is engineered with a **Teenage Engineering × Swiss Industrial Drafting** aesthetic—combining warm alabaster paper tones (`#F4F3EF`), exposed 24px structural blueprint grids (`#E2E0D8`), international signal accents (`#FF4F00` and `#008A4B`), and mechanical tactile controls with physical drop-shadows:
 
-* **Left 35% // Telemetry Rail:** Houses the Principal Architect Avatar viewport, dual 24kHz mic/speaker oscilloscopes, live numeric microphone RMS meter, 0.125s barge-in timeline beacon, real-time Boson vs. OpenAI unit economics ticker, and the syntax-highlighted live transcript and tool stream.
-* **Right 65% // Architect Canvas:** Full-height, reactive vector CAD viewport rendering dark-themed, high-contrast Mermaid.js topologies with smooth pan/zoom controls, live cloud cost ($/mo) & P99 latency HUDs, one-click failure injection, and a direct text/voice command bar.
+* **Left 35% // Telemetry Rail:** Houses the 5-Avatar Persona Selector (Chloe, Marcus, Oliver, Emma, Liam) with live talking-head video viewport, dual 24kHz mic/speaker oscilloscopes, live numeric microphone RMS meter, 0.125s barge-in timeline beacon, real-time Boson vs. OpenAI unit economics ticker, and the syntax-highlighted live transcript and tool stream.
+* **Right 65% // Visual Mind-Map Canvas:** Full-height, reactive vector CAD viewport pre-calibrated to a **220% default zoom** scale focused on central milestones, rendering vibrant pastel flowchart mind-maps with smooth pan/zoom controls, contingency simulations, and a direct text/voice command bar.
 
 ---
 
